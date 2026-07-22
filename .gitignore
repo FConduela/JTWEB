@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Build / cache
+.next/
+out/
+build/
+dist/
+.cache/
+.swc/
+*.tsbuildinfo
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+
+# Medusa / uploads
+/uploads/
+.medusa/
+medusa-db.sql
+dump.rdb
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth
+
+# Vercel
+.vercel/
