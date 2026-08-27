@@ -62,8 +62,7 @@ const buildProductBreadcrumbs = (
 
 const buildProductJsonLd = (
   product: HttpTypes.StoreProduct,
-  images: HttpTypes.StoreProductImage[],
-  countryCode: string
+  images: HttpTypes.StoreProductImage[]
 ) => {
   const { cheapestPrice } = getProductPrice({ product })
   const inStock = product.variants?.some(isVariantInStock) ?? false
@@ -76,7 +75,7 @@ const buildProductJsonLd = (
     `${product.title} - Juego disponible en Jugando Toy, tu tienda de juegos de mesa y juguetes didácticos en Chile.`
   const sku = product.variants?.[0]?.sku || product.id
   const baseUrl = getBaseURL().replace(/\/$/, "")
-  const productUrl = `${baseUrl}/${countryCode}/products/${product.handle}`
+  const productUrl = `${baseUrl}/products/${product.handle}`
 
   return {
     "@context": "https://schema.org",
@@ -112,7 +111,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
     return notFound()
   }
 
-  const jsonLd = buildProductJsonLd(product, images, countryCode)
+  const jsonLd = buildProductJsonLd(product, images)
   const breadcrumbItems = buildProductBreadcrumbs(product)
 
   return (

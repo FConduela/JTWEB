@@ -2,7 +2,7 @@
 
 import { clx } from "@medusajs/ui"
 import { ArrowRightOnRectangle } from "@medusajs/icons"
-import { useParams, usePathname } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 import ChevronDown from "@modules/common/icons/chevron-down"
 import User from "@modules/common/icons/user"
@@ -10,7 +10,8 @@ import MapPin from "@modules/common/icons/map-pin"
 import Package from "@modules/common/icons/package"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
-import { signout } from "@lib/data/customer"
+
+const logoutHref = "/api/auth/logout"
 
 const AccountNav = ({
   customer,
@@ -18,16 +19,11 @@ const AccountNav = ({
   customer: HttpTypes.StoreCustomer | null
 }) => {
   const route = usePathname()
-  const { countryCode } = useParams() as { countryCode: string }
-
-  const handleLogout = async () => {
-    await signout(countryCode)
-  }
 
   return (
     <div>
       <div className="small:hidden" data-testid="mobile-account-nav">
-        {route !== `/${countryCode}/account` ? (
+        {route !== "/account" ? (
           <LocalizedClientLink
             href="/account"
             className="flex items-center gap-x-2 text-small-regular py-2"
@@ -89,10 +85,9 @@ const AccountNav = ({
                   </LocalizedClientLink>
                 </li>
                 <li>
-                  <button
-                    type="button"
+                  <a
+                    href={logoutHref}
                     className="flex items-center justify-between py-4 border-b border-gray-200 px-8 w-full"
-                    onClick={handleLogout}
                     data-testid="logout-button"
                   >
                     <div className="flex items-center gap-x-2">
@@ -100,7 +95,7 @@ const AccountNav = ({
                       <span>Log out</span>
                     </div>
                     <ChevronDown className="transform -rotate-90" />
-                  </button>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -151,13 +146,9 @@ const AccountNav = ({
                 </AccountNavLink>
               </li>
               <li className="text-grey-700">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  data-testid="logout-button"
-                >
+                <a href={logoutHref} data-testid="logout-button">
                   Log out
-                </button>
+                </a>
               </li>
             </ul>
           </div>
@@ -180,9 +171,7 @@ const AccountNavLink = ({
   children,
   "data-testid": dataTestId,
 }: AccountNavLinkProps) => {
-  const { countryCode }: { countryCode: string } = useParams()
-
-  const active = route.split(countryCode)[1] === href
+  const active = route === href
   return (
     <LocalizedClientLink
       href={href}

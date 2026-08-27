@@ -1,9 +1,5 @@
 import { Suspense } from "react"
 
-import { listRegions } from "@lib/data/regions"
-import { listLocales } from "@lib/data/locales"
-import { getLocale } from "@lib/data/locale-actions"
-import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
@@ -14,13 +10,7 @@ const desktopNavLinks = [
   { label: "Ofertas", href: "/store" },
 ]
 
-export default async function Nav() {
-  const [regions, locales, currentLocale] = await Promise.all([
-    listRegions().then((regions: StoreRegion[]) => regions),
-    listLocales(),
-    getLocale(),
-  ])
-
+export default function Nav() {
   return (
     <header className="sticky top-0 inset-x-0 z-50 w-full bg-brand-bg border-b border-grey-20">
       <nav
@@ -29,11 +19,7 @@ export default async function Nav() {
       >
         {/* Móvil: menú hamburguesa (izquierda) */}
         <div className="flex flex-1 items-center justify-start md:hidden">
-          <SideMenu
-            regions={regions}
-            locales={locales}
-            currentLocale={currentLocale}
-          />
+          <SideMenu />
         </div>
 
         {/* Escritorio: logo + enlaces inline */}

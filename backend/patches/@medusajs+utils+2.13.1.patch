@@ -1,0 +1,27 @@
+diff --git a/node_modules/@medusajs/utils/dist/common/parse-stringify-if-necessary.js b/node_modules/@medusajs/utils/dist/common/parse-stringify-if-necessary.js
+index ffbe240..415d8c8 100644
+--- a/node_modules/@medusajs/utils/dist/common/parse-stringify-if-necessary.js
++++ b/node_modules/@medusajs/utils/dist/common/parse-stringify-if-necessary.js
+@@ -28,7 +28,7 @@ function parseStringifyIfNecessary(result) {
+     }
+     const copy = {};
+     for (const key in result) {
+-        if (result.hasOwnProperty(key)) {
++        if (Object.prototype.hasOwnProperty.call(result, key)) {
+             const value = result[key];
+             if (typeof value === "function" || typeof value === "symbol") {
+                 continue;
+diff --git a/node_modules/@medusajs/utils/dist/common/serialize-error.js b/node_modules/@medusajs/utils/dist/common/serialize-error.js
+index 5c843a2..34f6ac0 100644
+--- a/node_modules/@medusajs/utils/dist/common/serialize-error.js
++++ b/node_modules/@medusajs/utils/dist/common/serialize-error.js
+@@ -8,8 +8,7 @@ function serializeError(error) {
+         stack: error.stack,
+     };
+     Object.getOwnPropertyNames(error).forEach((key) => {
+-        // eslint-disable-next-line no-prototype-builtins
+-        if (!serialized.hasOwnProperty(key)) {
++        if (!Object.prototype.hasOwnProperty.call(serialized, key)) {
+             serialized[key] = error[key];
+         }
+     });

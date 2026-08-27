@@ -1,7 +1,5 @@
-import { Container } from "@medusajs/ui"
-
-import ChevronDown from "@modules/common/icons/chevron-down"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ClaimGuestOrdersOnMount from "@modules/account/components/claim-guest-orders"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 
@@ -11,127 +9,185 @@ type OverviewProps = {
 }
 
 const Overview = ({ customer, orders }: OverviewProps) => {
+  const profileCompletion = getProfileCompletion(customer)
+  const addressesCount = customer?.addresses?.length || 0
+  const recentOrders = orders?.slice(0, 5) ?? []
+
   return (
-    <div data-testid="overview-page-wrapper">
-      <div className="hidden small:block">
-        <div className="text-xl-semi flex justify-between items-center mb-4">
-          <span data-testid="welcome-message" data-value={customer?.first_name}>
-            Hello {customer?.first_name}
+    <section
+      className="flex flex-col gap-4 md:gap-6"
+      data-testid="overview-page-wrapper"
+      aria-labelledby="account-overview-heading"
+    >
+      <ClaimGuestOrdersOnMount />
+      <header className="flex flex-col gap-2 border-b border-ui-border-base pb-4">
+        <h1
+          id="account-overview-heading"
+          className="text-xl-semi"
+          data-testid="welcome-message"
+          data-value={customer?.first_name}
+        >
+          Hola, {customer?.first_name}
+        </h1>
+        <p className="text-small-regular text-ui-fg-subtle">
+          Sesión iniciada como{" "}
+          <span
+            className="font-medium text-ui-fg-base"
+            data-testid="customer-email"
+            data-value={customer?.email}
+          >
+            {customer?.email}
           </span>
-          <span className="text-small-regular text-ui-fg-base">
-            Signed in as:{" "}
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
+        <article className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 md:p-6">
+          <h2 className="text-base-semi mb-3">Perfil</h2>
+          <p className="flex items-end gap-x-2">
             <span
-              className="font-semibold"
-              data-testid="customer-email"
-              data-value={customer?.email}
+              className="text-3xl-semi leading-none"
+              data-testid="customer-profile-completion"
+              data-value={profileCompletion}
             >
-              {customer?.email}
+              {profileCompletion}%
             </span>
-          </span>
-        </div>
-        <div className="flex flex-col py-8 border-t border-gray-200">
-          <div className="flex flex-col gap-y-4 h-full col-span-1 row-span-2 flex-1">
-            <div className="flex items-start gap-x-16 mb-6">
-              <div className="flex flex-col gap-y-4">
-                <h3 className="text-large-semi">Profile</h3>
-                <div className="flex items-end gap-x-2">
-                  <span
-                    className="text-3xl-semi leading-none"
-                    data-testid="customer-profile-completion"
-                    data-value={getProfileCompletion(customer)}
-                  >
-                    {getProfileCompletion(customer)}%
-                  </span>
-                  <span className="uppercase text-base-regular text-ui-fg-subtle">
-                    Completed
-                  </span>
-                </div>
-              </div>
+            <span className="text-small-regular text-ui-fg-subtle uppercase">
+              Completado
+            </span>
+          </p>
+          <LocalizedClientLink
+            href="/account/profile"
+            className="mt-4 inline-block text-small-regular underline text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+          >
+            Editar perfil
+          </LocalizedClientLink>
+        </article>
 
-              <div className="flex flex-col gap-y-4">
-                <h3 className="text-large-semi">Addresses</h3>
-                <div className="flex items-end gap-x-2">
-                  <span
-                    className="text-3xl-semi leading-none"
-                    data-testid="addresses-count"
-                    data-value={customer?.addresses?.length || 0}
-                  >
-                    {customer?.addresses?.length || 0}
-                  </span>
-                  <span className="uppercase text-base-regular text-ui-fg-subtle">
-                    Saved
-                  </span>
-                </div>
-              </div>
-            </div>
+        <article className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 md:p-6">
+          <h2 className="text-base-semi mb-3">Direcciones</h2>
+          <p className="flex items-end gap-x-2">
+            <span
+              className="text-3xl-semi leading-none"
+              data-testid="addresses-count"
+              data-value={addressesCount}
+            >
+              {addressesCount}
+            </span>
+            <span className="text-small-regular text-ui-fg-subtle uppercase">
+              Guardadas
+            </span>
+          </p>
+          <LocalizedClientLink
+            href="/account/addresses"
+            className="mt-4 inline-block text-small-regular underline text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+          >
+            Gestionar direcciones
+          </LocalizedClientLink>
+        </article>
 
-            <div className="flex flex-col gap-y-4">
-              <div className="flex items-center gap-x-2">
-                <h3 className="text-large-semi">Recent orders</h3>
-              </div>
-              <ul
-                className="flex flex-col gap-y-4"
-                data-testid="orders-wrapper"
+        <nav
+          className="flex flex-col gap-2 rounded-lg border border-ui-border-base p-4 md:p-6"
+          aria-label="Accesos rápidos de cuenta"
+        >
+          <h2 className="text-base-semi mb-1">Accesos rápidos</h2>
+          <ul className="flex flex-col gap-2 text-small-regular">
+            <li>
+              <LocalizedClientLink
+                href="/account/profile"
+                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
+                data-testid="profile-link"
               >
-                {orders && orders.length > 0 ? (
-                  orders.slice(0, 5).map((order) => {
-                    return (
-                      <li
-                        key={order.id}
-                        data-testid="order-wrapper"
-                        data-value={order.id}
-                      >
-                        <LocalizedClientLink
-                          href={`/account/orders/details/${order.id}`}
-                        >
-                          <Container className="bg-gray-50 flex justify-between items-center p-4">
-                            <div className="grid grid-cols-3 grid-rows-2 text-small-regular gap-x-4 flex-1">
-                              <span className="font-semibold">Date placed</span>
-                              <span className="font-semibold">
-                                Order number
-                              </span>
-                              <span className="font-semibold">
-                                Total amount
-                              </span>
-                              <span data-testid="order-created-date">
-                                {new Date(order.created_at).toDateString()}
-                              </span>
-                              <span
-                                data-testid="order-id"
-                                data-value={order.display_id}
-                              >
-                                #{order.display_id}
-                              </span>
-                              <span data-testid="order-amount">
-                                {convertToLocale({
-                                  amount: order.total,
-                                  currency_code: order.currency_code,
-                                })}
-                              </span>
-                            </div>
-                            <button
-                              className="flex items-center justify-between"
-                              data-testid="open-order-button"
-                            >
-                              <span className="sr-only">
-                                Go to order #{order.display_id}
-                              </span>
-                              <ChevronDown className="-rotate-90" />
-                            </button>
-                          </Container>
-                        </LocalizedClientLink>
-                      </li>
-                    )
-                  })
-                ) : (
-                  <span data-testid="no-orders-message">No recent orders</span>
-                )}
-              </ul>
-            </div>
-          </div>
-        </div>
+                Mi perfil
+              </LocalizedClientLink>
+            </li>
+            <li>
+              <LocalizedClientLink
+                href="/account/addresses"
+                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
+                data-testid="addresses-link"
+              >
+                Mis direcciones
+              </LocalizedClientLink>
+            </li>
+            <li>
+              <LocalizedClientLink
+                href="/account/orders"
+                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
+                data-testid="orders-link"
+              >
+                Mis pedidos
+              </LocalizedClientLink>
+            </li>
+          </ul>
+        </nav>
+
+        <article className="rounded-lg border border-ui-border-base p-4 md:p-6 md:col-span-2">
+          <header className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="text-base-semi">Pedidos recientes</h2>
+            <LocalizedClientLink
+              href="/account/orders"
+              className="text-small-regular underline text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+            >
+              Ver todos
+            </LocalizedClientLink>
+          </header>
+
+          <ul className="flex flex-col gap-3" data-testid="orders-wrapper">
+            {recentOrders.length > 0 ? (
+              recentOrders.map((order) => (
+                <li key={order.id} data-testid="order-wrapper" data-value={order.id}>
+                  <LocalizedClientLink
+                    href={`/account/orders/details/${order.id}`}
+                    className="block rounded-md border border-ui-border-base bg-ui-bg-subtle p-4 transition-colors hover:bg-ui-bg-subtle-hover"
+                  >
+                    <div className="grid grid-cols-1 gap-2 text-small-regular sm:grid-cols-3 sm:gap-4">
+                      <div>
+                        <span className="block font-semibold">Fecha</span>
+                        <time dateTime={order.created_at} data-testid="order-created-date">
+                          {new Date(order.created_at).toLocaleDateString()}
+                        </time>
+                      </div>
+                      <div>
+                        <span className="block font-semibold">Número</span>
+                        <span data-testid="order-id" data-value={order.display_id}>
+                          #{order.display_id}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="block font-semibold">Total</span>
+                        <span data-testid="order-amount">
+                          {convertToLocale({
+                            amount: order.total,
+                            currency_code: order.currency_code,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </LocalizedClientLink>
+                </li>
+              ))
+            ) : (
+              <li>
+                <p className="text-small-regular text-ui-fg-subtle" data-testid="no-orders-message">
+                  Aún no tienes pedidos recientes.
+                </p>
+              </li>
+            )}
+          </ul>
+        </article>
       </div>
-    </div>
+
+      <footer className="border-t border-ui-border-base pt-4">
+        <a
+          href="/api/auth/logout"
+          className="inline-flex items-center text-small-regular text-ui-fg-subtle underline hover:text-ui-fg-base"
+          data-testid="logout-button"
+        >
+          Cerrar sesión
+        </a>
+      </footer>
+    </section>
   )
 }
 

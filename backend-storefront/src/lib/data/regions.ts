@@ -4,6 +4,7 @@ import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
 import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies"
+import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
 
 export const listRegions = async () => {
   const next = {
@@ -57,7 +58,7 @@ export const getRegion = async (countryCode: string) => {
 
     const region = countryCode
       ? regionMap.get(countryCode)
-      : regionMap.get("us")
+      : regionMap.get(DEFAULT_COUNTRY_CODE)
 
     return region
   } catch (e: any) {

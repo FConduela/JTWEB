@@ -1,30 +1,23 @@
 import React from "react"
 import { CreditCard } from "@medusajs/icons"
 
-import Ideal from "@modules/common/icons/ideal"
-import Bancontact from "@modules/common/icons/bancontact"
 import PayPal from "@modules/common/icons/paypal"
+
+/**
+ * La tienda opera únicamente en Chile bajo el dominio .cl, por lo que ya no
+ * existe un segmento dinámico [countryCode] en las rutas. Este valor se usa
+ * como región por defecto para las consultas a Medusa que la requieren.
+ */
+export const DEFAULT_COUNTRY_CODE = "cl"
 
 /* Map of payment provider_id to their title and icon. Add in any payment providers you want to use. */
 export const paymentInfoMap: Record<
   string,
   { title: string; icon: React.JSX.Element }
 > = {
-  pp_stripe_stripe: {
-    title: "Credit card",
+  pp_mercadopago_mercadopago: {
+    title: "Mercado Pago",
     icon: <CreditCard />,
-  },
-  "pp_medusa-payments_default": {
-    title: "Credit card",
-    icon: <CreditCard />,
-  },
-  "pp_stripe-ideal_stripe": {
-    title: "iDeal",
-    icon: <Ideal />,
-  },
-  "pp_stripe-bancontact_stripe": {
-    title: "Bancontact",
-    icon: <Bancontact />,
   },
   pp_paypal_paypal: {
     title: "PayPal",
@@ -34,14 +27,22 @@ export const paymentInfoMap: Record<
     title: "Manual Payment",
     icon: <CreditCard />,
   },
-  // Add more payment providers here
+  pp_transbank_transbank: {
+    title: "Webpay Plus (Transbank)",
+    icon: <CreditCard />,
+  },
+  bank_transfer: {
+    title: "Transferencia Bancaria",
+    icon: <CreditCard />,
+  },
+  pp_bank_transfer_bank_transfer: {
+    title: "Transferencia Bancaria",
+    icon: <CreditCard />,
+  },
 }
 
-// This only checks if it is native stripe or medusa payments for card payments, it ignores the other stripe-based providers
-export const isStripeLike = (providerId?: string) => {
-  return (
-    providerId?.startsWith("pp_stripe_") || providerId?.startsWith("pp_medusa-")
-  )
+export const isMercadopago = (providerId?: string) => {
+  return providerId?.startsWith("pp_mercadopago_")
 }
 
 export const isPaypal = (providerId?: string) => {
@@ -49,6 +50,17 @@ export const isPaypal = (providerId?: string) => {
 }
 export const isManual = (providerId?: string) => {
   return providerId?.startsWith("pp_system_default")
+}
+
+export const isTransbank = (providerId?: string) => {
+  return providerId?.startsWith("pp_transbank_")
+}
+
+export const isBankTransfer = (providerId?: string) => {
+  return (
+    providerId === "bank_transfer" ||
+    providerId?.startsWith("pp_bank_transfer_")
+  )
 }
 
 // Add currencies that don't need to be divided by 100

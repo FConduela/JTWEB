@@ -1,50 +1,25 @@
 "use client"
 
-import { loadStripe } from "@stripe/stripe-js"
 import React from "react"
-import StripeWrapper from "./stripe-wrapper"
+import MercadopagoWrapper from "./mercadopago-wrapper"
 import { HttpTypes } from "@medusajs/types"
-import { isStripeLike } from "@lib/constants"
 
 type PaymentWrapperProps = {
   cart: HttpTypes.StoreCart
   children: React.ReactNode
 }
 
-const stripeKey =
-  process.env.NEXT_PUBLIC_STRIPE_KEY ||
-  process.env.NEXT_PUBLIC_MEDUSA_PAYMENTS_PUBLISHABLE_KEY
+const mercadopagoKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY
 
-const medusaAccountId = process.env.NEXT_PUBLIC_MEDUSA_PAYMENTS_ACCOUNT_ID
-const stripePromise = stripeKey
-  ? loadStripe(
-      stripeKey,
-      medusaAccountId ? { stripeAccount: medusaAccountId } : undefined
+const PaymentWrapper: React.FC<PaymentWrapperProps> = ({ children }) => {
+  if (!mercadopagoKey) {
+    console.warn(
+      "NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY no está configurada. El Payment Brick no funcionará."
     )
-  : null
-
-const PaymentWrapper: React.FC<PaymentWrapperProps> = ({ cart, children }) => {
-  const paymentSession = cart.payment_collection?.payment_sessions?.find(
-    (s) => s.status === "pending"
-  )
-
-  if (
-    isStripeLike(paymentSession?.provider_id) &&
-    paymentSession &&
-    stripePromise
-  ) {
-    return (
-      <StripeWrapper
-        paymentSession={paymentSession}
-        stripeKey={stripeKey}
-        stripePromise={stripePromise}
-      >
-        {children}
-      </StripeWrapper>
-    )
+    return <div>{children}</div>
   }
 
-  return <div>{children}</div>
+  return <MercadopagoWrapper>{children}</MercadopagoWrapper>
 }
 
 export default PaymentWrapper
