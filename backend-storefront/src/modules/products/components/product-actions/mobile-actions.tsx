@@ -8,6 +8,7 @@ import X from "@modules/common/icons/x"
 
 import { getProductPrice } from "@lib/util/get-product-price"
 import OptionSelect from "./option-select"
+import QuantitySelect from "./quantity-select"
 import { HttpTypes } from "@medusajs/types"
 import { isSimpleProduct } from "@lib/util/product"
 
@@ -21,6 +22,9 @@ type MobileActionsProps = {
   isAdding?: boolean
   show: boolean
   optionsDisabled: boolean
+  quantity: number
+  onQuantityChange: (value: number) => void
+  maxQuantity: number
 }
 
 const MobileActions: React.FC<MobileActionsProps> = ({
@@ -33,6 +37,9 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   isAdding,
   show,
   optionsDisabled,
+  quantity,
+  onQuantityChange,
+  maxQuantity,
 }) => {
   const { state, open, close } = useToggleState()
 
@@ -98,37 +105,45 @@ const MobileActions: React.FC<MobileActionsProps> = ({
                 <div></div>
               )}
             </div>
-            <div className={clx("grid grid-cols-2 w-full gap-x-4", {
-              "!grid-cols-1": isSimple
-            })}>
-              {!isSimple && <Button
-                onClick={open}
-                variant="secondary"
-                className="w-full"
-                data-testid="mobile-actions-button"
-              >
-                <div className="flex items-center justify-between w-full">
-                  <span>
-                    {variant
-                      ? Object.values(options).join(" / ")
-                      : "Select Options"}
-                  </span>
-                  <ChevronDown />
-                </div>
-              </Button>}
-              <Button
-                onClick={handleAddToCart}
-                disabled={!inStock || !variant}
-                className="w-full !border-none !bg-brand-secondary !text-brand-text !shadow-none transition-colors hover:!bg-brand-primary hover:!text-white"
-                isLoading={isAdding}
-                data-testid="mobile-cart-button"
-              >
-                {!variant
-                  ? "Select variant"
-                  : !inStock
-                  ? "Out of stock"
-                  : "Add to cart"}
-              </Button>
+            <div className="flex w-full flex-col gap-3">
+              {!isSimple && (
+                <Button
+                  onClick={open}
+                  variant="secondary"
+                  className="w-full"
+                  data-testid="mobile-actions-button"
+                >
+                  <div className="flex w-full items-center justify-between">
+                    <span>
+                      {variant
+                        ? Object.values(options).join(" / ")
+                        : "Seleccionar opciones"}
+                    </span>
+                    <ChevronDown />
+                  </div>
+                </Button>
+              )}
+              <div className="flex w-full items-center gap-3">
+                <QuantitySelect
+                  value={quantity}
+                  onChange={onQuantityChange}
+                  max={maxQuantity}
+                  disabled={optionsDisabled || !inStock || !variant}
+                />
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={!inStock || !variant}
+                  className="h-11 min-w-0 flex-1 !border-none !bg-brand-accent !text-white !shadow-none transition-colors hover:!bg-brand-accent/90 focus-visible:!ring-brand-accent"
+                  isLoading={isAdding}
+                  data-testid="mobile-cart-button"
+                >
+                  {!variant
+                    ? "Seleccionar variante"
+                    : !inStock
+                    ? "Sin stock"
+                    : "Agregar al carrito"}
+                </Button>
+              </div>
             </div>
           </div>
         </Transition>

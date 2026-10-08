@@ -1,6 +1,7 @@
 import { listProductsWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import ProductPreview from "@modules/products/components/product-preview"
+import CatalogActionBar from "@modules/store/components/catalog-action-bar"
 import CatalogSeoSection from "@modules/store/components/catalog-seo-section"
 import { Pagination } from "@modules/store/components/pagination"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
@@ -22,6 +23,7 @@ export default async function PaginatedProducts({
   categoryId,
   productsIds,
   countryCode,
+  showCatalogSeoSection = true,
 }: {
   sortBy?: SortOptions
   page: number
@@ -29,6 +31,7 @@ export default async function PaginatedProducts({
   categoryId?: string
   productsIds?: string[]
   countryCode: string
+  showCatalogSeoSection?: boolean
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 12,
@@ -69,26 +72,32 @@ export default async function PaginatedProducts({
 
   return (
     <>
+      <CatalogActionBar
+        sortBy={sortBy ?? "created_at"}
+        page={page}
+        totalPages={totalPages}
+      />
       <ul
-        className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-8"
+        className="mt-4 grid w-full grid-cols-2 gap-4 md:grid-cols-3 md:gap-5 lg:grid-cols-4 lg:gap-6"
         data-testid="products-list"
       >
         {products.map((p) => {
           return (
-            <li key={p.id}>
-              <ProductPreview product={p} region={region} />
+            <li key={p.id} className="h-full">
+              <ProductPreview product={p} region={region} variant="card" />
             </li>
           )
         })}
       </ul>
       {totalPages > 1 && (
         <Pagination
+          variant="footer"
           data-testid="product-pagination"
           page={page}
           totalPages={totalPages}
         />
       )}
-      <CatalogSeoSection />
+      {showCatalogSeoSection ? <CatalogSeoSection /> : null}
     </>
   )
 }

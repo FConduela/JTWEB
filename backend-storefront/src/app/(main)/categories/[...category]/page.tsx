@@ -1,10 +1,11 @@
-import { Metadata } from "next"
+import { Metadata, ResolvingMetadata } from "next"
 import { notFound } from "next/navigation"
 
 import { getCategoryByHandle, listCategories } from "@lib/data/categories"
 import CategoryTemplate from "@modules/categories/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import { getBaseURL } from "@lib/util/env"
 
 type Props = {
   params: Promise<{ category: string[] }>
@@ -26,24 +27,51 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata(props: Props): Promise<Metadata> {
+export async function generateMetadata(
+  props: Props,
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
   const params = await props.params
-  try {
-    const productCategory = await getCategoryByHandle(params.category)
+  const category = await getCategoryByHandle(params.category)
 
-    const title = productCategory.name + " | Medusa Store"
-
-    const description = productCategory.description ?? `${title} category.`
-
+  if (!category) {
     return {
-      title: `${title} | Medusa Store`,
-      description,
-      alternates: {
-        canonical: `${params.category.join("/")}`,
-      },
+      title: "Categoría no encontrada | Jugando Toy",
     }
-  } catch (error) {
-    notFound()
+  }
+
+  const metadataRecord = category.metadata as Record<string, unknown> | undefined
+  const seoDescription =
+    typeof metadataRecord?.seo_description === "string"
+      ? metadataRecord.seo_description.trim()
+      : ""
+
+  const description =
+    seoDescription ||
+    category.description?.trim() ||
+    `Explora ${category.name} en Jugando Toy: juegos de mesa y juguetes didácticos con envío a todo Chile.`
+
+  const baseUrl = getBaseURL().replace(/\/$/, "")
+  const categoryPath = params.category.join("/")
+  const canonicalUrl = `${baseUrl}/categories/${categoryPath}`
+
+  return {
+    title: `${category.name} | Jugando Toy`,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: `${category.name} | Jugando Toy`,
+      description,
+      url: canonicalUrl,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${category.name} | Jugando Toy`,
+      description,
+    },
   }
 }
 

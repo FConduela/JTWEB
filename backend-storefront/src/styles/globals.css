@@ -4,10 +4,25 @@
 
 @layer base {
   :root {
-    --color-primary: #4f46e5;
-    --color-secondary: #f59e0b;
-    --color-bg-base: #fafaf9;
-    --color-text-base: #1c1917;
+    /* Bosque Montessori — paleta actualizada */
+    --brand-primary: #a8d5ba;
+    --brand-text: #4a4a4a;
+    --brand-bg: #fdfbf7;
+    --brand-card: #ffffff;
+    --brand-section: #EBE8E4;
+    --brand-yellow: #f5e89e;
+    --brand-blue: #81ADDD;
+    --brand-peach: #e9935e;
+    --brand-accent: #e22127;
+
+    /* Compatibilidad con utilidades previas (CTA secundarios, badges) */
+    --brand-secondary: var(--brand-peach);
+
+    /* Alias Medusa / utilidades existentes */
+    --color-primary: var(--brand-primary);
+    --color-secondary: var(--brand-peach);
+    --color-bg-base: var(--brand-bg);
+    --color-text-base: var(--brand-text);
   }
 }
 

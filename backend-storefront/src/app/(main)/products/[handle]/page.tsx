@@ -1,10 +1,11 @@
-import { Metadata } from "next"
+import { Metadata, ResolvingMetadata } from "next"
 import { notFound } from "next/navigation"
 import { listProducts } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import ProductTemplate from "@modules/products/templates"
 import { HttpTypes } from "@medusajs/types"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import { getBaseURL } from "@lib/util/env"
 
 type Props = {
   params: Promise<{ handle: string }>
@@ -48,13 +49,17 @@ function getImagesForVariant(
   return product.images!.filter((i) => imageIdsMap.has(i.id))
 }
 
-export async function generateMetadata(props: Props): Promise<Metadata> {
-  const params = await props.params
-  const { handle } = params
+export async function generateMetadata(
+  props: Props,
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { handle } = await props.params
   const region = await getRegion(DEFAULT_COUNTRY_CODE)
 
   if (!region) {
-    notFound()
+    return {
+      title: "Producto no encontrado | Jugando Toy",
+    }
   }
 
   const product = await listProducts({
@@ -63,15 +68,35 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }).then(({ response }) => response.products[0])
 
   if (!product) {
-    notFound()
+    return {
+      title: "Producto no encontrado | Jugando Toy",
+    }
   }
 
+  const description =
+    product.description?.trim() ||
+    "Descubre los mejores juguetes educativos y de madera en Jugando Toy."
+
+  const baseUrl = getBaseURL().replace(/\/$/, "")
+  const canonicalUrl = `${baseUrl}/products/${product.handle}`
+
   return {
-    title: `${product.title} | Medusa Store`,
-    description: `${product.title}`,
+    title: `${product.title} | Jugando Toy`,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
     openGraph: {
-      title: `${product.title} | Medusa Store`,
-      description: `${product.title}`,
+      title: product.title,
+      description,
+      url: canonicalUrl,
+      images: product.thumbnail ? [product.thumbnail] : [],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.title,
+      description,
       images: product.thumbnail ? [product.thumbnail] : [],
     },
   }

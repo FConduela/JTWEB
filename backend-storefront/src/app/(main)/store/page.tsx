@@ -5,8 +5,9 @@ import StoreTemplate from "@modules/store/templates"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
 
 export const metadata: Metadata = {
-  title: "Store",
-  description: "Explore all of our products.",
+  title: "Catálogo de Juguetes Didácticos y de Madera | Jugando Toy",
+  description:
+    "Explora nuestra selección de juguetes Montessori, de madera y didácticos diseñados para el desarrollo y la diversión de tus niños.",
 }
 
 type Params = {
@@ -21,10 +22,12 @@ export default async function StorePage(props: Params) {
   const { sortBy, page } = searchParams
 
   return (
-    <StoreTemplate
-      sortBy={sortBy}
-      page={page}
-      countryCode={DEFAULT_COUNTRY_CODE}
-    />
+    <div className="bg-brand-bg">
+      <StoreTemplate
+        sortBy={sortBy}
+        page={page}
+        countryCode={DEFAULT_COUNTRY_CODE}
+      />
+    </div>
   )
 }

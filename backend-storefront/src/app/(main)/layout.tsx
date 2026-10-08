@@ -4,6 +4,7 @@ import { listCartOptions, retrieveCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import { getBaseURL } from "@lib/util/env"
 import { StoreCartShippingOption } from "@medusajs/types"
+import CookieBanner from "@modules/layout/components/cookie-banner"
 import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
 import CartUIProviderWrapper from "@modules/layout/components/cart-ui-provider"
 import Footer from "@modules/layout/templates/footer"
@@ -41,6 +42,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
       )}
       {props.children}
       <Footer />
+      <CookieBanner />
     </CartUIProviderWrapper>
   )
 }

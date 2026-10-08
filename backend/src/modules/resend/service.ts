@@ -7,12 +7,7 @@ import {
   ProviderSendNotificationDTO,
   ProviderSendNotificationResultsDTO,
 } from "@medusajs/framework/types"
-import { CreateEmailOptions, Resend } from "resend"
-import { orderPlacedEmail } from "./emails/order-placed"
-
-enum Templates {
-  ORDER_PLACED = "order_placed",
-}
+import { Resend } from "resend"
 
 type ResendOptions = {
   api_key: string
@@ -28,6 +23,75 @@ type ResendOptions = {
 
 type InjectedDependencies = {
   logger: Logger
+}
+
+function getEmailContent(
+  template: string,
+  data: Record<string, unknown>
+): { subject: string; html: string } {
+  const storeName = "Jugando Toy"
+
+  switch (template) {
+    case "welcome_email":
+      return {
+        subject: `¡Bienvenido a ${storeName}, ${data.first_name}!`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #4F46E5;">¡Hola ${data.first_name}! 👋</h2>
+            <p>Estamos muy felices de tenerte en <strong>${storeName}</strong>.</p>
+            <p>A partir de ahora, podrás acceder a ofertas exclusivas, guardar tus productos favoritos y comprar de forma mucho más rápida.</p>
+            <a href="http://localhost:8000/cl/account" style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">Ir a mi cuenta</a>
+          </div>
+        `,
+      }
+    case "order_receipt":
+      return {
+        subject: `Confirmación de pedido #${data.order_id} - ${storeName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #4F46E5;">¡Gracias por tu compra, ${data.customer_name}! 🎉</h2>
+            <p>Hemos recibido tu pedido <strong>#${data.order_id}</strong> y ya estamos trabajando en él.</p>
+            <div style="background-color: #f9fafb; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <p style="margin: 0; font-size: 18px;"><strong>Total pagado:</strong> ${data.total} ${typeof data.currency === "string" ? data.currency.toUpperCase() : ""}</p>
+            </div>
+            <p>Te avisaremos cuando tu pedido esté en camino.</p>
+          </div>
+        `,
+      }
+    case "abandoned_cart":
+      return {
+        subject: `¿Olvidaste algo en ${storeName}? 🛒`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #4F46E5;">¡Tus juguetes te están esperando!</h2>
+            <p>Notamos que dejaste algunos artículos increíbles en tu carrito y no queremos que te los pierdas.</p>
+            <p>Vuelve antes de que se agoten:</p>
+            <a href="http://localhost:8000/cl/cart" style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">Recuperar mi carrito</a>
+          </div>
+        `,
+      }
+    case "account_merge": {
+      const magicLink =
+        (typeof data.magic_link === "string" && data.magic_link) || "#"
+      return {
+        subject: `Unifica tus compras en ${storeName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+            <h2 style="color: #4F46E5;">¡Hola! Detectamos compras previas 🛍️</h2>
+            <p>Hemos notado que realizaste compras como invitado usando este correo.</p>
+            <p>Para vincular ese historial con tu nueva cuenta y tener todo en un solo lugar, haz clic en el siguiente enlace (es válido por 15 minutos):</p>
+            <a href="${magicLink}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin-top: 15px;">Vincular mis compras</a>
+            <p style="margin-top: 20px; font-size: 12px; color: #666;">Si no solicitaste esta acción, puedes ignorar este correo de forma segura.</p>
+          </div>
+        `,
+      }
+    }
+    default:
+      return {
+        subject: `Notificación de ${storeName}`,
+        html: `<p>Evento: ${template}</p><pre>${JSON.stringify(data, null, 2)}</pre>`,
+      }
+  }
 }
 
 class ResendNotificationProviderService extends AbstractNotificationProviderService {
@@ -60,76 +124,29 @@ class ResendNotificationProviderService extends AbstractNotificationProviderServ
     }
   }
 
-  private getTemplateSubject(
-    template: string,
-    data?: Record<string, unknown>
-  ) {
-    if (data?.subject && typeof data.subject === "string") {
-      return data.subject
-    }
-
-    if (this.options.html_templates?.[template]?.subject) {
-      return this.options.html_templates[template].subject
-    }
-
-    if (template === Templates.ORDER_PLACED) {
-      return "Confirmación de tu pedido"
-    }
-
-    return "Nueva notificación"
-  }
-
-  private getTemplateContent(
-    template: string,
-    data: Record<string, unknown>
-  ) {
-    if (data.html && typeof data.html === "string") {
-      return data.html
-    }
-
-    if (this.options.html_templates?.[template]?.content) {
-      return this.options.html_templates[template].content
-    }
-
-    if (template === Templates.ORDER_PLACED) {
-      return orderPlacedEmail({
-        order_id: data.order_id as string | number | undefined,
-        first_name: data.first_name as string | undefined,
-      })
-    }
-
-    return null
-  }
-
   async send(
     notification: ProviderSendNotificationDTO
   ): Promise<ProviderSendNotificationResultsDTO> {
-    const template = notification.template as string
+    if (!this.resendClient) {
+      return {}
+    }
+
+    const template = notification.template ?? ""
     const notificationData = (notification.data ?? {}) as Record<
       string,
       unknown
     >
-    const content = this.getTemplateContent(template, notificationData)
+    const { subject, html } = getEmailContent(template, notificationData)
 
-    if (!content) {
-      this.logger.error(
-        `No se encontró plantilla de correo para "${template}".`
-      )
-      return {}
-    }
-
-    const commonOptions = {
-      from: this.options.from,
-      to: [notification.to],
-      subject: this.getTemplateSubject(template, notificationData),
-    }
-
-    const emailOptions: CreateEmailOptions =
-      typeof content === "string"
-        ? { ...commonOptions, html: content }
-        : { ...commonOptions, react: content }
-
-    const { data, error } = await this.resendClient.emails.send(emailOptions)
+    const { data, error } = await this.resendClient.emails.send({
+      from:
+        process.env.RESEND_FROM_EMAIL ||
+        this.options.from ||
+        "onboarding@resend.dev",
+      to: notification.to,
+      subject,
+      html,
+    })
 
     if (error || !data) {
       if (error) {

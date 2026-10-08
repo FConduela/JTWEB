@@ -2,88 +2,124 @@
 
 import { Popover, PopoverPanel, Transition } from "@headlessui/react"
 import { BarsThree, XMark } from "@medusajs/icons"
-import { Text } from "@medusajs/ui"
 import { Fragment } from "react"
 
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import User from "@modules/common/icons/user"
 
-const SideMenuItems = {
-  Home: "/",
-  Store: "/store",
-  Account: "/account",
-  Cart: "/cart",
-}
+const sideMenuItems = [
+  { label: "Inicio", href: "/", testId: "home-link" },
+  { label: "Tienda", href: "/store", testId: "store-link" },
+  { label: "Blog", href: "/blog", testId: "blog-link" },
+  { label: "Carrito", href: "/cart", testId: "cart-link" },
+] as const
 
 const SideMenu = () => {
   return (
     <div className="h-full">
-      <div className="flex items-center h-full">
-        <Popover className="h-full flex">
+      <div className="flex h-full items-center">
+        <Popover className="flex h-full">
           {({ open, close }) => (
             <>
               <div className="relative flex h-full">
                 <Popover.Button
                   data-testid="nav-menu-button"
                   aria-label="Abrir menú de navegación"
-                  className="relative flex items-center justify-center p-2 text-brand-text transition-colors duration-200 focus:outline-none hover:text-brand-primary"
+                  aria-expanded={open}
+                  className="relative inline-flex min-h-11 min-w-11 items-center justify-center p-2 text-brand-text transition-colors duration-200 hover:text-brand-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
                 >
-                  <BarsThree className="h-6 w-6" />
+                  <BarsThree className="h-6 w-6" aria-hidden="true" />
                   <span className="sr-only">Menú</span>
                 </Popover.Button>
               </div>
 
-              {open && (
-                <div
-                  className="fixed inset-0 z-[50] bg-black/0 pointer-events-auto"
+              <Transition show={open} as={Fragment}>
+                <Transition.Child
+                  as="div"
+                  enter="transition-opacity ease-out duration-200"
+                  enterFrom="opacity-0"
+                  enterTo="opacity-100"
+                  leave="transition-opacity ease-in duration-200"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                  className="fixed inset-0 z-[50] bg-black/30"
                   onClick={close}
                   data-testid="side-menu-backdrop"
+                  aria-hidden="true"
                 />
-              )}
 
-              <Transition
-                show={open}
-                as={Fragment}
-                enter="transition ease-out duration-150"
-                enterFrom="opacity-0"
-                enterTo="opacity-100 backdrop-blur-2xl"
-                leave="transition ease-in duration-150"
-                leaveFrom="opacity-100 backdrop-blur-2xl"
-                leaveTo="opacity-0"
-              >
-                <PopoverPanel className="flex flex-col absolute w-full pr-4 sm:pr-0 sm:w-1/3 2xl:w-1/4 sm:min-w-min h-[calc(100vh-1rem)] z-[51] inset-x-0 text-sm text-ui-fg-on-color m-2 backdrop-blur-2xl">
-                  <div
-                    data-testid="nav-menu-popup"
-                    className="flex flex-col h-full bg-[rgba(3,7,18,0.5)] rounded-rounded justify-between p-6"
-                  >
-                    <div className="flex justify-end" id="xmark">
-                      <button data-testid="close-menu-button" onClick={close}>
-                        <XMark />
-                      </button>
+                <Transition.Child
+                  as="div"
+                  enter="transition-transform ease-out duration-300"
+                  enterFrom="-translate-x-full"
+                  enterTo="translate-x-0"
+                  leave="transition-transform ease-in duration-250"
+                  leaveFrom="translate-x-0"
+                  leaveTo="-translate-x-full"
+                  className="fixed inset-y-0 left-0 z-[51] h-dvh w-[min(20rem,85vw)] shadow-xl small:hidden"
+                >
+                  <PopoverPanel static className="flex h-full flex-col text-brand-text">
+                    <div
+                      data-testid="nav-menu-popup"
+                      className="flex h-full flex-col justify-between border-r border-grey-20 bg-brand-bg"
+                    >
+                      <div
+                        className="flex w-full items-center justify-between gap-3 border-b border-grey-20 bg-brand-section px-5 py-4"
+                        id="xmark"
+                      >
+                        <LocalizedClientLink
+                          href="/account"
+                          data-testid="account-link"
+                          onClick={close}
+                          className="inline-flex min-h-[44px] items-center gap-2 text-2xl font-medium leading-tight text-brand-text transition-colors hover:text-brand-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+                        >
+                          <User
+                            className="h-7 w-7 shrink-0"
+                            size="28"
+                            aria-hidden="true"
+                          />
+                          Mi cuenta
+                        </LocalizedClientLink>
+                        <button
+                          type="button"
+                          data-testid="close-menu-button"
+                          onClick={close}
+                          aria-label="Cerrar menú"
+                          className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-md p-2 text-brand-accent focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+                        >
+                          <XMark className="h-7 w-7" aria-hidden="true" />
+                        </button>
+                      </div>
+
+                      <nav
+                        aria-label="Menú principal"
+                        className="flex-1 px-6 py-4"
+                      >
+                        <ul className="flex flex-col items-start gap-1">
+                          {sideMenuItems.map(({ label, href, testId }) => (
+                            <li key={href} className="w-full">
+                              <LocalizedClientLink
+                                href={href}
+                                className="flex min-h-[44px] w-full items-center py-3 text-2xl font-medium leading-tight text-brand-text transition-colors hover:text-brand-accent"
+                                onClick={close}
+                                data-testid={testId}
+                              >
+                                {label}
+                              </LocalizedClientLink>
+                            </li>
+                          ))}
+                        </ul>
+                      </nav>
+
+                      <div className="border-t border-grey-20 px-6 pb-6 pt-6">
+                        <p className="text-left text-sm text-brand-text/80">
+                          © {new Date().getFullYear()} Jugando Toy. Todos los
+                          derechos reservados.
+                        </p>
+                      </div>
                     </div>
-                    <ul className="flex flex-col gap-6 items-start justify-start">
-                      {Object.entries(SideMenuItems).map(([name, href]) => {
-                        return (
-                          <li key={name}>
-                            <LocalizedClientLink
-                              href={href}
-                              className="text-3xl leading-10 hover:text-ui-fg-disabled"
-                              onClick={close}
-                              data-testid={`${name.toLowerCase()}-link`}
-                            >
-                              {name}
-                            </LocalizedClientLink>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                    <div className="flex flex-col gap-y-6">
-                      <Text className="flex justify-between txt-compact-small">
-                        © {new Date().getFullYear()} Medusa Store. All rights
-                        reserved.
-                      </Text>
-                    </div>
-                  </div>
-                </PopoverPanel>
+                  </PopoverPanel>
+                </Transition.Child>
               </Transition>
             </>
           )}

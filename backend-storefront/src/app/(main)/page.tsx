@@ -1,15 +1,33 @@
 import { Metadata } from "next"
 
-import FeaturedProducts from "@modules/home/components/featured-products"
-import Hero from "@modules/home/components/hero"
+import HomeTemplate from "@modules/home/templates"
 import { listCollections } from "@lib/data/collections"
 import { getRegion } from "@lib/data/regions"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import { getBaseURL } from "@lib/util/env"
+
+const baseUrl = getBaseURL().replace(/\/$/, "")
 
 export const metadata: Metadata = {
-  title: "Medusa Next.js Starter Template",
+  title: "Juguetes de Madera Didácticos y Montessori | Jugando Toy",
   description:
-    "A performant frontend ecommerce starter template with Next.js 15 and Medusa.",
+    "Jugando Toy: juegos de mesa, juguetes didácticos y material Montessori. Envíos a todo Chile.",
+  alternates: {
+    canonical: baseUrl || "/",
+  },
+  openGraph: {
+    title: "Juguetes de Madera Didácticos y Montessori | Jugando Toy",
+    description:
+      "Descubre juegos de mesa y juguetes educativos para aprender jugando en familia.",
+    url: baseUrl || "/",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jugando Toy",
+    description:
+      "Juegos de mesa y juguetes didácticos con envío a todo Chile.",
+  },
 }
 
 export default async function Home() {
@@ -19,18 +37,16 @@ export default async function Home() {
     fields: "id, handle, title",
   })
 
-  if (!collections || !region) {
+  if (!region) {
     return null
   }
 
+  const primaryCollectionId = collections?.[0]?.id
+
   return (
-    <>
-      <Hero />
-      <div className="py-12">
-        <ul className="flex flex-col gap-x-6">
-          <FeaturedProducts collections={collections} region={region} />
-        </ul>
-      </div>
-    </>
+    <HomeTemplate
+      region={region}
+      primaryCollectionId={primaryCollectionId}
+    />
   )
 }

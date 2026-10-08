@@ -13,14 +13,18 @@ export const convertToLocale = ({
   currency_code,
   minimumFractionDigits,
   maximumFractionDigits,
-  locale = "en-US",
+  locale = "es-CL",
 }: ConvertToLocaleParams) => {
+  const isClp = currency_code?.toLowerCase() === "clp"
+  const minDigits = minimumFractionDigits ?? (isClp ? 0 : undefined)
+  const maxDigits = maximumFractionDigits ?? (isClp ? 0 : undefined)
+
   return currency_code && !isEmpty(currency_code)
     ? new Intl.NumberFormat(locale, {
         style: "currency",
         currency: currency_code,
-        minimumFractionDigits,
-        maximumFractionDigits,
+        ...(minDigits !== undefined && { minimumFractionDigits: minDigits }),
+        ...(maxDigits !== undefined && { maximumFractionDigits: maxDigits }),
       }).format(amount)
     : amount.toString()
 }

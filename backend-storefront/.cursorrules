@@ -1,0 +1,30 @@
+Contexto global para desarrollo Frontend (Next.js App Router):
+A partir de ahora, todas las tareas relacionadas con la estructura, diseño y maquetación del Storefront deben regirse estrictamente por los siguientes 3 pilares. Actúa como un experto en SEO técnico, UI/UX y rendimiento web.
+
+1. Metodología Mobile-First Estricta:
+
+Diseña y maqueta siempre pensando primero en la pantalla móvil (estilos base).
+
+Usa las media queries (o prefijos de Tailwind como md:, lg:) única y exclusivamente para escalar el diseño hacia pantallas más grandes (Tablet/Desktop).
+
+Garantiza que los elementos táctiles (botones, enlaces) tengan un área de interacción mínima de 44x44px.
+
+2. CSS Limpio y Mantenible (Prohibición de !important):
+
+Queda estrictamente desaconsejado el uso de la propiedad !important en el CSS.
+
+Resuelve los conflictos de estilos utilizando la especificidad natural de CSS, el orden de la cascada o reestructurando las clases.
+
+Mantén el código CSS/Tailwind modular, reutilizable y sin forzar sobreescrituras innecesarias.
+
+3. Optimización SEO y Semántica (Innegociable):
+
+Estructura HTML: Usa un único encabezado H1 por página. Mantén una jerarquía lógica de encabezados (H2, H3) sin saltos de nivel.
+
+Etiquetas Semánticas: Usa header, nav, main, section, article, aside y footer en lugar de usar puros div.
+
+Navegación: Todo elemento interactivo que cambie de página debe ser un enlace real usando el componente Link de Next.js con un atributo href válido. No uses onClick para la navegación principal.
+
+Rendimiento (Core Web Vitals): Usa siempre el componente Image de Next.js. Asegúrate de asignar priority=true a la imagen principal (LCP) y mantén el resto con lazy loading. Incluye siempre los atributos alt descriptivos.
+
+Aplica estas reglas en cada componente que modifiquemos o creemos de ahora en adelante.

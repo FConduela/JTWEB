@@ -1,114 +1,189 @@
 "use client"
 
 import { clx } from "@medusajs/ui"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import { usePathname, useSearchParams } from "next/navigation"
 
 export function Pagination({
   page,
   totalPages,
-  'data-testid': dataTestid
+  variant = "footer",
+  "data-testid": dataTestid,
 }: {
   page: number
   totalPages: number
-  'data-testid'?: string
+  variant?: "footer" | "inline"
+  "data-testid"?: string
 }) {
-  const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Helper function to generate an array of numbers within a range
   const arrayRange = (start: number, stop: number) =>
     Array.from({ length: stop - start + 1 }, (_, index) => start + index)
 
-  // Function to handle page changes
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams(searchParams)
-    params.set("page", newPage.toString())
-    router.push(`${pathname}?${params.toString()}`)
+  const hrefForPage = (targetPage: number) => {
+    const params = new URLSearchParams(searchParams.toString())
+    params.set("page", targetPage.toString())
+    const query = params.toString()
+    return query ? `${pathname}?${query}` : pathname
   }
 
-  // Function to render a page button
-  const renderPageButton = (
-    p: number,
+  const pageLinkClassName =
+    "inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2 text-sm text-brand-text transition-colors hover:bg-brand-section hover:text-brand-accent"
+
+  const renderPageLink = (
+    targetPage: number,
     label: string | number,
     isCurrent: boolean
-  ) => (
-    <button
-      key={p}
-      className={clx("txt-xlarge-plus text-ui-fg-muted", {
-        "text-ui-fg-base hover:text-ui-fg-subtle": isCurrent,
-      })}
-      disabled={isCurrent}
-      onClick={() => handlePageChange(p)}
-    >
-      {label}
-    </button>
-  )
+  ) => {
+    if (isCurrent) {
+      return (
+        <span
+          key={targetPage}
+          aria-current="page"
+          className={clx(
+            pageLinkClassName,
+            "rounded-full bg-brand-primary font-bold text-brand-text"
+          )}
+        >
+          {label}
+        </span>
+      )
+    }
 
-  // Function to render ellipsis
+    return (
+      <LocalizedClientLink
+        key={targetPage}
+        href={hrefForPage(targetPage)}
+        scroll={false}
+        className={pageLinkClassName}
+        aria-label={`Ir a la página ${targetPage}`}
+      >
+        {label}
+      </LocalizedClientLink>
+    )
+  }
+
   const renderEllipsis = (key: string) => (
     <span
       key={key}
-      className="txt-xlarge-plus text-ui-fg-muted items-center cursor-default"
+      className="inline-flex min-h-9 min-w-9 items-center justify-center text-sm text-brand-text/50"
+      aria-hidden="true"
     >
-      ...
+      …
     </span>
   )
 
-  // Function to render page buttons based on the current page and total pages
   const renderPageButtons = () => {
     const buttons = []
 
     if (totalPages <= 7) {
-      // Show all pages
       buttons.push(
         ...arrayRange(1, totalPages).map((p) =>
-          renderPageButton(p, p, p === page)
+          renderPageLink(p, p, p === page)
+        )
+      )
+    } else if (page <= 4) {
+      buttons.push(
+        ...arrayRange(1, 5).map((p) => renderPageLink(p, p, p === page))
+      )
+      buttons.push(renderEllipsis("ellipsis1"))
+      buttons.push(
+        renderPageLink(totalPages, totalPages, totalPages === page)
+      )
+    } else if (page >= totalPages - 3) {
+      buttons.push(renderPageLink(1, 1, 1 === page))
+      buttons.push(renderEllipsis("ellipsis2"))
+      buttons.push(
+        ...arrayRange(totalPages - 4, totalPages).map((p) =>
+          renderPageLink(p, p, p === page)
         )
       )
     } else {
-      // Handle different cases for displaying pages and ellipses
-      if (page <= 4) {
-        // Show 1, 2, 3, 4, 5, ..., lastpage
-        buttons.push(
-          ...arrayRange(1, 5).map((p) => renderPageButton(p, p, p === page))
+      buttons.push(renderPageLink(1, 1, 1 === page))
+      buttons.push(renderEllipsis("ellipsis3"))
+      buttons.push(
+        ...arrayRange(page - 1, page + 1).map((p) =>
+          renderPageLink(p, p, p === page)
         )
-        buttons.push(renderEllipsis("ellipsis1"))
-        buttons.push(
-          renderPageButton(totalPages, totalPages, totalPages === page)
-        )
-      } else if (page >= totalPages - 3) {
-        // Show 1, ..., lastpage - 4, lastpage - 3, lastpage - 2, lastpage - 1, lastpage
-        buttons.push(renderPageButton(1, 1, 1 === page))
-        buttons.push(renderEllipsis("ellipsis2"))
-        buttons.push(
-          ...arrayRange(totalPages - 4, totalPages).map((p) =>
-            renderPageButton(p, p, p === page)
-          )
-        )
-      } else {
-        // Show 1, ..., page - 1, page, page + 1, ..., lastpage
-        buttons.push(renderPageButton(1, 1, 1 === page))
-        buttons.push(renderEllipsis("ellipsis3"))
-        buttons.push(
-          ...arrayRange(page - 1, page + 1).map((p) =>
-            renderPageButton(p, p, p === page)
-          )
-        )
-        buttons.push(renderEllipsis("ellipsis4"))
-        buttons.push(
-          renderPageButton(totalPages, totalPages, totalPages === page)
-        )
-      }
+      )
+      buttons.push(renderEllipsis("ellipsis4"))
+      buttons.push(
+        renderPageLink(totalPages, totalPages, totalPages === page)
+      )
     }
 
     return buttons
   }
 
-  // Render the component
+  const prevDisabled = page <= 1
+  const nextDisabled = page >= totalPages
+
+  const arrowClass =
+    "inline-flex min-h-9 min-w-9 items-center justify-center rounded-md text-sm font-medium transition-colors"
+
   return (
-    <div className="flex justify-center w-full mt-12">
-      <div className="flex gap-3 items-end" data-testid={dataTestid}>{renderPageButtons()}</div>
-    </div>
+    <nav
+      aria-label="Paginación de productos"
+      className={clx(
+        "flex w-full items-center",
+        variant === "footer" ? "mt-12 justify-center" : "justify-center small:justify-end"
+      )}
+    >
+      <div
+        className="flex flex-wrap items-center justify-center gap-1 sm:gap-2"
+        data-testid={dataTestid}
+      >
+        {prevDisabled ? (
+          <span
+            className={clx(
+              arrowClass,
+              "cursor-not-allowed text-brand-text/30"
+            )}
+            aria-disabled="true"
+          >
+            ‹ Anterior
+          </span>
+        ) : (
+          <LocalizedClientLink
+            href={hrefForPage(page - 1)}
+            scroll={false}
+            className={clx(
+              arrowClass,
+              "text-brand-text hover:bg-brand-section hover:text-brand-accent"
+            )}
+            aria-label="Página anterior"
+          >
+            ‹ Anterior
+          </LocalizedClientLink>
+        )}
+
+        {renderPageButtons()}
+
+        {nextDisabled ? (
+          <span
+            className={clx(
+              arrowClass,
+              "cursor-not-allowed text-brand-text/30"
+            )}
+            aria-disabled="true"
+          >
+            Siguiente ›
+          </span>
+        ) : (
+          <LocalizedClientLink
+            href={hrefForPage(page + 1)}
+            scroll={false}
+            className={clx(
+              arrowClass,
+              "text-brand-text hover:bg-brand-section hover:text-brand-accent"
+            )}
+            aria-label="Página siguiente"
+          >
+            Siguiente ›
+          </LocalizedClientLink>
+        )}
+      </div>
+    </nav>
   )
 }

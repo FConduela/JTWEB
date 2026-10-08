@@ -1,40 +1,25 @@
 "use client"
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { useCallback } from "react"
-
-import SortProducts, { SortOptions } from "./sort-products"
+import { ReactNode } from "react"
 
 type RefinementListProps = {
-  sortBy: SortOptions
-  search?: boolean
-  'data-testid'?: string
+  children?: ReactNode
+  "data-testid"?: string
 }
 
-const RefinementList = ({ sortBy, 'data-testid': dataTestId }: RefinementListProps) => {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-
-  const createQueryString = useCallback(
-    (name: string, value: string) => {
-      const params = new URLSearchParams(searchParams)
-      params.set(name, value)
-
-      return params.toString()
-    },
-    [searchParams]
-  )
-
-  const setQueryParams = (name: string, value: string) => {
-    const query = createQueryString(name, value)
-    router.push(`${pathname}?${query}`)
-  }
-
+/** Barra lateral del catálogo (categorías/filtros). El ordenamiento está en CatalogActionBar. */
+const RefinementList = ({
+  children,
+  "data-testid": dataTestId,
+}: RefinementListProps) => {
   return (
-    <div className="flex small:flex-col gap-12 py-4 mb-8 small:px-0 pl-6 small:min-w-[250px] small:ml-[1.675rem]">
-      <SortProducts sortBy={sortBy} setQueryParams={setQueryParams} data-testid={dataTestId} />
-    </div>
+    <aside
+      className="mb-8 hidden w-full shrink-0 small:mb-0 small:block small:min-h-full small:min-w-[250px] small:max-w-[280px] small:self-stretch small:rounded-2xl small:border small:border-gray-200 small:bg-brand-card small:py-8 small:pl-6 small:pr-8 lg:pr-12"
+      aria-label="Filtros del catálogo"
+      data-testid={dataTestId}
+    >
+      {children}
+    </aside>
   )
 }
 

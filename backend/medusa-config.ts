@@ -90,5 +90,8 @@ module.exports = defineConfig({
         ],
       },
     },
+    blog: {
+      resolve: "./src/modules/blog",
+    },
   },
 })

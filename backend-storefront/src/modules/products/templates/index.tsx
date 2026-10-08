@@ -8,9 +8,8 @@ import Breadcrumbs, {
 import ImageGallery from "@modules/products/components/image-gallery"
 import ProductActions from "@modules/products/components/product-actions"
 import ProductOnboardingCta from "@modules/products/components/product-onboarding-cta"
-import ProductTabs from "@modules/products/components/product-tabs"
 import RelatedProducts from "@modules/products/components/related-products"
-import ProductInfo from "@modules/products/templates/product-info"
+import ProductDescription from "@modules/products/templates/product-info/product-description"
 import SkeletonRelatedProducts from "@modules/skeletons/templates/skeleton-related-products"
 import { notFound } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
@@ -122,43 +121,60 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <div className="content-container py-4">
-        <Breadcrumbs items={breadcrumbItems} />
-      </div>
-      <div
-        className="content-container  flex flex-col small:flex-row small:items-start py-6 relative"
-        data-testid="product-container"
-      >
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-6">
-          <ProductInfo product={product} />
-          <ProductTabs product={product} />
+      <main id="product-page">
+        <div className="content-container py-4">
+          <Breadcrumbs items={breadcrumbItems} />
         </div>
-        <div className="block w-full relative">
-          <ImageGallery images={images} productTitle={product.title} />
-        </div>
-        <div className="flex flex-col small:sticky small:top-48 small:py-0 small:max-w-[300px] w-full py-8 gap-y-12">
-          <ProductOnboardingCta />
-          <Suspense
-            fallback={
-              <ProductActions
-                disabled={true}
-                product={product}
-                region={region}
-              />
-            }
-          >
-            <ProductActionsWrapper id={product.id} region={region} />
+        <section
+          aria-labelledby="product-heading"
+          className="content-container py-6 md:py-10"
+          data-testid="product-container"
+        >
+          <div className="relative flex flex-col gap-y-4 lg:grid lg:grid-cols-12 lg:gap-x-12 lg:gap-y-8">
+            <div className="order-1 flex min-h-0 flex-col lg:col-span-7 lg:row-start-1 lg:h-full">
+              <div
+                className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-gray-200/90 bg-brand-card p-4 shadow-[0_2px_10px_rgba(74,74,74,0.1)] md:p-6 lg:min-h-full"
+                data-testid="product-gallery-panel"
+              >
+                <ImageGallery images={images} productTitle={product.title} />
+              </div>
+            </div>
+
+            <aside className="order-2 flex min-h-0 flex-col lg:col-span-5 lg:row-start-1 lg:h-full">
+              <div className="flex w-full flex-col rounded-2xl border border-gray-200/90 bg-brand-card p-6 shadow-[0_2px_10px_rgba(74,74,74,0.1)] lg:sticky lg:top-24 lg:mx-auto lg:h-full lg:max-h-full lg:min-h-0 lg:max-w-[500px] lg:flex-1">
+                <Suspense
+                  fallback={
+                    <ProductActions
+                      disabled={true}
+                      product={product}
+                      region={region}
+                    />
+                  }
+                >
+                  <ProductActionsWrapper id={product.id} region={region} />
+                </Suspense>
+              </div>
+              <ProductOnboardingCta />
+            </aside>
+
+            <div className="order-3 mt-8 hidden lg:col-span-7 lg:row-start-2 lg:block lg:mt-0">
+              <ProductDescription product={product} />
+            </div>
+
+            <div className="order-3 mt-8 block w-full lg:hidden">
+              <ProductDescription product={product} />
+            </div>
+          </div>
+        </section>
+        <div
+          className="content-container my-12 md:my-16 lg:my-32"
+          data-testid="related-products-container"
+        >
+          <Suspense fallback={<SkeletonRelatedProducts />}>
+            <RelatedProducts product={product} countryCode={countryCode} />
           </Suspense>
         </div>
-      </div>
-      <div
-        className="content-container my-16 small:my-32"
-        data-testid="related-products-container"
-      >
-        <Suspense fallback={<SkeletonRelatedProducts />}>
-          <RelatedProducts product={product} countryCode={countryCode} />
-        </Suspense>
-      </div>
+      </main>
     </>
   )
 }

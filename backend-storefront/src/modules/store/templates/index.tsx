@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
+import CatalogSidebar from "@modules/store/components/refinement-list/catalog-sidebar"
 import RefinementList from "@modules/store/components/refinement-list"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
@@ -20,19 +21,27 @@ const StoreTemplate = ({
 
   return (
     <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
+      className="flex flex-col py-6 content-container small:flex-row small:items-stretch small:gap-8"
       data-testid="category-container"
     >
-      <RefinementList sortBy={sort} />
-      <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1 data-testid="store-page-title">All products</h1>
-        </div>
+      <RefinementList>
+        <CatalogSidebar />
+      </RefinementList>
+      <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
+        <header>
+          <h1
+            className="text-3xl font-bold text-brand-accent"
+            data-testid="store-page-title"
+          >
+            Nuestro Catálogo
+          </h1>
+        </header>
         <Suspense fallback={<SkeletonProductGrid />}>
           <PaginatedProducts
             sortBy={sort}
             page={pageNumber}
             countryCode={countryCode}
+            showCatalogSeoSection={false}
           />
         </Suspense>
       </div>

@@ -4,6 +4,7 @@ import { addToCart } from "@lib/data/cart"
 import { useCartUI } from "@lib/context/cart-ui-context"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import { trackAddToCart, trackViewItem } from "@lib/tracking"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
@@ -12,7 +13,9 @@ import { isEqual } from "lodash"
 import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
+import ProductInfo from "@modules/products/templates/product-info"
 import MobileActions from "./mobile-actions"
+import QuantitySelect from "./quantity-select"
 import { useRouter } from "next/navigation"
 
 type ProductActionsProps = {
@@ -30,6 +33,12 @@ const optionsAsKeymap = (
   }, {})
 }
 
+const getVariantPrice = (variant?: HttpTypes.StoreProductVariant) => {
+  const amount = variant?.calculated_price?.calculated_amount
+
+  return amount !== undefined && amount !== null ? Number(amount) : undefined
+}
+
 export default function ProductActions({
   product,
   disabled,
@@ -39,6 +48,7 @@ export default function ProductActions({
   const searchParams = useSearchParams()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const countryCode = DEFAULT_COUNTRY_CODE
   const { openCart } = useCartUI()
@@ -50,6 +60,15 @@ export default function ProductActions({
       setOptions(variantOptions ?? {})
     }
   }, [product.variants])
+
+  useEffect(() => {
+    const variant = product.variants?.[0]
+    trackViewItem({
+      id: product.id,
+      title: product.title ?? "",
+      price: getVariantPrice(variant),
+    })
+  }, [product.id, product.title, product.variants])
 
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
@@ -119,6 +138,26 @@ export default function ProductActions({
     return false
   }, [selectedVariant])
 
+  const maxQuantity = useMemo(() => {
+    if (!selectedVariant) {
+      return 1
+    }
+
+    if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
+      return 99
+    }
+
+    return Math.max(1, selectedVariant.inventory_quantity ?? 1)
+  }, [selectedVariant])
+
+  useEffect(() => {
+    setQuantity(1)
+  }, [selectedVariant?.id])
+
+  useEffect(() => {
+    setQuantity((current) => Math.min(Math.max(1, current), maxQuantity))
+  }, [maxQuantity])
+
   const actionsRef = useRef<HTMLDivElement>(null)
 
   const inView = useIntersection(actionsRef, "0px")
@@ -132,9 +171,18 @@ export default function ProductActions({
     try {
       await addToCart({
         variantId: selectedVariant.id,
-        quantity: 1,
+        quantity,
         countryCode,
       })
+
+      trackAddToCart(
+        {
+          id: product.id,
+          title: product.title ?? "",
+          price: getVariantPrice(selectedVariant),
+        },
+        quantity
+      )
 
       router.refresh()
       openCart()
@@ -145,8 +193,14 @@ export default function ProductActions({
 
   return (
     <>
-      <div className="flex flex-col gap-y-2" ref={actionsRef}>
-        <div>
+      <div className="flex flex-col gap-y-6 lg:h-full" ref={actionsRef}>
+        <div className="flex flex-col gap-y-3">
+          <ProductInfo product={product} />
+          <Divider className="mt-0 !border-gray-400" />
+          <ProductPrice product={product} variant={selectedVariant} />
+        </div>
+
+        <div className="flex flex-col gap-y-4 lg:mt-auto">
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
               {(product.options || []).map((option) => {
@@ -166,30 +220,42 @@ export default function ProductActions({
               <Divider />
             </div>
           )}
+
+          <div className="flex flex-wrap items-center gap-3">
+          <QuantitySelect
+            value={quantity}
+            onChange={setQuantity}
+            max={maxQuantity}
+            disabled={
+              !!disabled ||
+              isAdding ||
+              !selectedVariant ||
+              !inStock ||
+              !isValidVariant
+            }
+          />
+          <Button
+            onClick={handleAddToCart}
+            disabled={
+              !inStock ||
+              !selectedVariant ||
+              !!disabled ||
+              isAdding ||
+              !isValidVariant
+            }
+            variant="primary"
+            className="h-11 min-w-[10rem] flex-1 !border-none !bg-brand-accent !text-white !shadow-none transition-colors hover:!bg-brand-accent/90 focus-visible:!ring-brand-accent"
+            isLoading={isAdding}
+            data-testid="add-product-button"
+          >
+            {!selectedVariant && !options
+              ? "Seleccionar variante"
+              : !inStock || !isValidVariant
+              ? "Sin stock"
+              : "Agregar al carrito"}
+          </Button>
+          </div>
         </div>
-
-        <ProductPrice product={product} variant={selectedVariant} />
-
-        <Button
-          onClick={handleAddToCart}
-          disabled={
-            !inStock ||
-            !selectedVariant ||
-            !!disabled ||
-            isAdding ||
-            !isValidVariant
-          }
-          variant="primary"
-          className="h-10 w-full !border-none !bg-brand-secondary !text-brand-text !shadow-none transition-colors hover:!bg-brand-primary hover:!text-white"
-          isLoading={isAdding}
-          data-testid="add-product-button"
-        >
-          {!selectedVariant && !options
-            ? "Select variant"
-            : !inStock || !isValidVariant
-            ? "Out of stock"
-            : "Add to cart"}
-        </Button>
         <MobileActions
           product={product}
           variant={selectedVariant}
@@ -200,6 +266,9 @@ export default function ProductActions({
           isAdding={isAdding}
           show={!inView}
           optionsDisabled={!!disabled || isAdding}
+          quantity={quantity}
+          onQuantityChange={setQuantity}
+          maxQuantity={maxQuantity}
         />
       </div>
     </>

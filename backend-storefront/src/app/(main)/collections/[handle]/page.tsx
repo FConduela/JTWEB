@@ -6,6 +6,7 @@ import { StoreCollection } from "@medusajs/types"
 import CollectionTemplate from "@modules/collections/templates"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import { getBaseURL } from "@lib/util/env"
 
 type Props = {
   params: Promise<{ handle: string }>
@@ -36,15 +37,44 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const collection = await getCollectionByHandle(params.handle)
 
   if (!collection) {
-    notFound()
+    return {
+      title: "Colección no encontrada | Jugando Toy",
+    }
   }
 
-  const metadata = {
-    title: `${collection.title} | Medusa Store`,
-    description: `${collection.title} collection`,
-  } as Metadata
+  const metadataRecord = collection.metadata as
+    | Record<string, unknown>
+    | undefined
+  const seoDescription =
+    typeof metadataRecord?.seo_description === "string"
+      ? metadataRecord.seo_description.trim()
+      : ""
 
-  return metadata
+  const description =
+    seoDescription ||
+    `Explora la colección ${collection.title} en Jugando Toy: juegos de mesa y juguetes didácticos con envío a todo Chile.`
+
+  const baseUrl = getBaseURL().replace(/\/$/, "")
+  const canonicalUrl = `${baseUrl}/collections/${collection.handle}`
+
+  return {
+    title: `${collection.title} | Jugando Toy`,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: `${collection.title} | Jugando Toy`,
+      description,
+      url: canonicalUrl,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${collection.title} | Jugando Toy`,
+      description,
+    },
+  }
 }
 
 export default async function CollectionPage(props: Props) {

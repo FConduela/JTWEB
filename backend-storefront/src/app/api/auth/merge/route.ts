@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import jwt from "jsonwebtoken"
+import { revalidateTag } from "next/cache"
 
-type MergeTokenPayload = {
-  email?: string
-  purpose?: string
-}
+const PUBLISHABLE_API_KEY =
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+const MEDUSA_BACKEND_URL =
+  process.env.MEDUSA_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ||
+  "http://localhost:9000"
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token")
@@ -15,26 +17,52 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const jwtSecret = process.env.JWT_SECRET || "supersecret"
-
   try {
-    const decoded = jwt.verify(token, jwtSecret) as MergeTokenPayload
-    const email = decoded?.email
+    const response = await fetch(`${MEDUSA_BACKEND_URL}/store/merge/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-publishable-api-key": PUBLISHABLE_API_KEY,
+      },
+      body: JSON.stringify({ token }),
+    })
 
-    if (!email || typeof email !== "string") {
-      throw new Error("Token sin email válido")
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "")
+      throw new Error(errorText || "No se pudo confirmar la unificación")
+    }
+
+    const data = (await response.json()) as { token?: string }
+
+    if (!data.token) {
+      throw new Error("El backend no devolvió un token de sesión")
     }
 
     const message =
-      "Cuenta unificada con éxito. Ya puedes iniciar sesión con Google."
+      "Cuenta unificada con éxito. Ya puedes gestionar tus pedidos desde tu cuenta."
 
-    return NextResponse.redirect(
+    const redirectResponse = NextResponse.redirect(
       new URL(
         `/account?message=${encodeURIComponent(message)}`,
         request.url
       )
     )
-  } catch {
+
+    redirectResponse.cookies.set("_medusa_jwt", data.token, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    })
+
+    revalidateTag("customer")
+    revalidateTag("cart")
+
+    return redirectResponse
+  } catch (error) {
+    console.error("Error en merge de cuentas:", error)
+
     return NextResponse.redirect(
       new URL(
         `/account?error=${encodeURIComponent("Token inválido o expirado")}`,
