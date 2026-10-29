@@ -1,21 +1,25 @@
 "use client"
 
 import { addToCart } from "@lib/data/cart"
-import { useCartUI } from "@lib/context/cart-ui-context"
 import { useIntersection } from "@lib/hooks/use-in-view"
 import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import {
+  getImplicitDefaultOptionValues,
+  getStorefrontProductOptions,
+  mergeProductOptionSelection,
+} from "@lib/util/product-options"
 import { trackAddToCart, trackViewItem } from "@lib/tracking"
 import { HttpTypes } from "@medusajs/types"
 import { Button } from "@medusajs/ui"
 import Divider from "@modules/common/components/divider"
 import OptionSelect from "@modules/products/components/product-actions/option-select"
 import { isEqual } from "lodash"
-import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProductPrice from "../product-price"
 import ProductInfo from "@modules/products/templates/product-info"
 import MobileActions from "./mobile-actions"
 import QuantitySelect from "./quantity-select"
+import { useCartUI } from "@lib/context/cart-ui-context"
 import { useRouter } from "next/navigation"
 
 type ProductActionsProps = {
@@ -44,14 +48,26 @@ export default function ProductActions({
   disabled,
 }: ProductActionsProps) {
   const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const { scheduleOpenCartAfterAdd } = useCartUI()
 
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const countryCode = DEFAULT_COUNTRY_CODE
-  const { openCart } = useCartUI()
+  const storefrontOptions = useMemo(
+    () => getStorefrontProductOptions(product.options),
+    [product.options]
+  )
+
+  const implicitDefaultOptions = useMemo(
+    () => getImplicitDefaultOptionValues(product.options),
+    [product.options]
+  )
+
+  const resolvedOptions = useMemo(
+    () => mergeProductOptionSelection(options, implicitDefaultOptions),
+    [options, implicitDefaultOptions]
+  )
 
   // If there is only 1 variant, preselect the options
   useEffect(() => {
@@ -75,11 +91,25 @@ export default function ProductActions({
       return
     }
 
+    const visibleOptionIds = storefrontOptions.map((option) => option.id)
+    const requiresOptionSelection = visibleOptionIds.length > 0
+    const allOptionsSelected =
+      !requiresOptionSelection ||
+      visibleOptionIds.every(
+        (optionId) =>
+          resolvedOptions[optionId] !== undefined &&
+          resolvedOptions[optionId] !== ""
+      )
+
+    if (requiresOptionSelection && !allOptionsSelected) {
+      return undefined
+    }
+
     return product.variants.find((v) => {
       const variantOptions = optionsAsKeymap(v.options)
-      return isEqual(variantOptions, options)
+      return isEqual(variantOptions, resolvedOptions)
     })
-  }, [product.variants, options])
+  }, [product.variants, resolvedOptions, storefrontOptions])
 
   // update the options when a variant is selected
   const setOptionValue = (optionId: string, value: string) => {
@@ -93,26 +123,9 @@ export default function ProductActions({
   const isValidVariant = useMemo(() => {
     return product.variants?.some((v) => {
       const variantOptions = optionsAsKeymap(v.options)
-      return isEqual(variantOptions, options)
+      return isEqual(variantOptions, resolvedOptions)
     })
-  }, [product.variants, options])
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString())
-    const value = isValidVariant ? selectedVariant?.id : null
-
-    if (params.get("v_id") === value) {
-      return
-    }
-
-    if (value) {
-      params.set("v_id", value)
-    } else {
-      params.delete("v_id")
-    }
-
-    router.replace(pathname + "?" + params.toString())
-  }, [selectedVariant, isValidVariant])
+  }, [product.variants, resolvedOptions])
 
   // check if the selected variant is in stock
   const inStock = useMemo(() => {
@@ -184,8 +197,8 @@ export default function ProductActions({
         quantity
       )
 
+      scheduleOpenCartAfterAdd()
       router.refresh()
-      openCart()
     } finally {
       setIsAdding(false)
     }
@@ -203,11 +216,12 @@ export default function ProductActions({
         <div className="flex flex-col gap-y-4 lg:mt-auto">
           {(product.variants?.length ?? 0) > 1 && (
             <div className="flex flex-col gap-y-4">
-              {(product.options || []).map((option) => {
+              {storefrontOptions.map((option) => {
                 return (
                   <div key={option.id}>
                     <OptionSelect
                       option={option}
+                      variants={product.variants}
                       current={options[option.id]}
                       updateOption={setOptionValue}
                       title={option.title ?? ""}

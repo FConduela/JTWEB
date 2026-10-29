@@ -5,7 +5,8 @@ import { PencilSquare as Edit, Trash } from "@medusajs/icons"
 import { Button, Heading, Text, clx } from "@medusajs/ui"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
-import CountrySelect from "@modules/checkout/components/country-select"
+import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import ChileRegionComunaFields from "@modules/common/components/chile-region-comuna-fields"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
 import Spinner from "@modules/common/icons/spinner"
@@ -17,13 +18,11 @@ import {
 } from "@lib/data/customer"
 
 type EditAddressProps = {
-  region: HttpTypes.StoreRegion
   address: HttpTypes.StoreCustomerAddress
   isActive?: boolean
 }
 
 const EditAddress: React.FC<EditAddressProps> = ({
-  region,
   address,
   isActive = false,
 }) => {
@@ -65,9 +64,9 @@ const EditAddress: React.FC<EditAddressProps> = ({
     <>
       <div
         className={clx(
-          "border rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between transition-colors",
+          "flex h-full min-h-[220px] w-full flex-col justify-between rounded-2xl border border-gray-200 bg-brand-card p-5 transition-colors",
           {
-            "border-gray-900": isActive,
+            "border-brand-accent ring-1 ring-brand-accent/20": isActive,
           }
         )}
         data-testid="address-container"
@@ -108,7 +107,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
             data-testid="address-edit-button"
           >
             <Edit />
-            Edit
+            Editar
           </button>
           <button
             className="text-small-regular text-ui-fg-base flex items-center gap-x-2"
@@ -116,31 +115,46 @@ const EditAddress: React.FC<EditAddressProps> = ({
             data-testid="address-delete-button"
           >
             {removing ? <Spinner /> : <Trash />}
-            Remove
+            Eliminar
           </button>
         </div>
       </div>
 
-      <Modal isOpen={state} close={close} data-testid="edit-address-modal">
+      <Modal
+        isOpen={state}
+        close={close}
+        size="large"
+        data-testid="edit-address-modal"
+      >
         <Modal.Title>
-          <Heading className="mb-2">Edit address</Heading>
+          <Heading className="mb-2 text-brand-text">Editar dirección</Heading>
         </Modal.Title>
-        <form action={formAction}>
+        <form
+          action={formAction}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
           <input type="hidden" name="addressId" value={address.id} />
+          <input
+            type="hidden"
+            name="country_code"
+            value={DEFAULT_COUNTRY_CODE}
+          />
           <Modal.Body>
-            <div className="grid grid-cols-1 gap-y-2">
-              <div className="grid grid-cols-2 gap-x-2">
+            <div className="grid w-full min-w-0 grid-cols-1 gap-y-2">
+              <div className="grid min-w-0 grid-cols-1 gap-x-2 gap-y-2 sm:grid-cols-2">
                 <Input
-                  label="First name"
+                  label="Nombre"
                   name="first_name"
+                  labelPosition="outside"
                   required
                   autoComplete="given-name"
                   defaultValue={address.first_name || undefined}
                   data-testid="first-name-input"
                 />
                 <Input
-                  label="Last name"
+                  label="Apellido"
                   name="last_name"
+                  labelPosition="outside"
                   required
                   autoComplete="family-name"
                   defaultValue={address.last_name || undefined}
@@ -148,63 +162,51 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 />
               </div>
               <Input
-                label="Company"
+                label="Empresa"
                 name="company"
+                labelPosition="outside"
                 autoComplete="organization"
                 defaultValue={address.company || undefined}
                 data-testid="company-input"
               />
+              <ChileRegionComunaFields
+                key={address.id}
+                required
+                defaultProvince={address.province}
+                defaultCity={address.city}
+                provinceTestId="state-input"
+                cityTestId="city-input"
+              />
               <Input
-                label="Address"
+                label="Dirección"
                 name="address_1"
+                labelPosition="outside"
                 required
                 autoComplete="address-line1"
                 defaultValue={address.address_1 || undefined}
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartment, suite, etc."
+                label="Depto., oficina, etc."
                 name="address_2"
+                labelPosition="outside"
                 autoComplete="address-line2"
                 defaultValue={address.address_2 || undefined}
                 data-testid="address-2-input"
               />
-              <div className="grid grid-cols-[144px_1fr] gap-x-2">
-                <Input
-                  label="Postal code"
-                  name="postal_code"
-                  required
-                  autoComplete="postal-code"
-                  defaultValue={address.postal_code || undefined}
-                  data-testid="postal-code-input"
-                />
-                <Input
-                  label="City"
-                  name="city"
-                  required
-                  autoComplete="locality"
-                  defaultValue={address.city || undefined}
-                  data-testid="city-input"
-                />
-              </div>
               <Input
-                label="Province / State"
-                name="province"
-                autoComplete="address-level1"
-                defaultValue={address.province || undefined}
-                data-testid="state-input"
-              />
-              <CountrySelect
-                name="country_code"
-                region={region}
+                label="Código postal"
+                name="postal_code"
+                labelPosition="outside"
                 required
-                autoComplete="country"
-                defaultValue={address.country_code || undefined}
-                data-testid="country-select"
+                autoComplete="postal-code"
+                defaultValue={address.postal_code || undefined}
+                data-testid="postal-code-input"
               />
               <Input
-                label="Phone"
+                label="Teléfono"
                 name="phone"
+                labelPosition="outside"
                 autoComplete="phone"
                 defaultValue={address.phone || undefined}
                 data-testid="phone-input"
@@ -217,18 +219,21 @@ const EditAddress: React.FC<EditAddressProps> = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <div className="flex gap-3 mt-6">
-              <Button
-                type="reset"
-                variant="secondary"
-                onClick={close}
-                className="h-10"
-                data-testid="cancel-button"
-              >
-                Cancel
-              </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
-            </div>
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={close}
+              className="h-10"
+              data-testid="cancel-button"
+            >
+              Cancelar
+            </Button>
+            <SubmitButton
+              data-testid="save-button"
+              className="!rounded-full !bg-brand-accent !text-white hover:!bg-[#c91c22]"
+            >
+              Guardar
+            </SubmitButton>
           </Modal.Footer>
         </form>
       </Modal>

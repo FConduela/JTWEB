@@ -5,14 +5,27 @@ import User from "@modules/common/icons/user"
 import CartButton from "@modules/layout/components/cart-button"
 import SideMenu from "@modules/layout/components/side-menu"
 
-const desktopNavLinks = [
+const desktopNavLinks: {
+  label: string
+  href: string
+  testId?: string
+}[] = [
+  { label: "Catálogo", href: "/store", testId: "nav-catalog-link" },
   { label: "Juegos de Mesa", href: "/store" },
   { label: "Didácticos", href: "/store" },
-  { label: "Ofertas", href: "/ofertas" },
-  { label: "Blog", href: "/blog" },
+  { label: "Ofertas", href: "/ofertas", testId: "nav-ofertas-link" },
+  { label: "Blog", href: "/blog", testId: "nav-blog-link" },
 ]
 
-export default function Nav() {
+type NavProps = {
+  accountLabel?: string
+  isLoggedIn?: boolean
+}
+
+export default function Nav({
+  accountLabel = "Mi cuenta",
+  isLoggedIn = false,
+}: NavProps) {
   return (
     <header className="sticky top-0 inset-x-0 z-50 w-full border-b border-brand-accent bg-brand-bg">
       <nav
@@ -22,7 +35,7 @@ export default function Nav() {
         {/* Izquierda: menú móvil / logo escritorio */}
         <div className="flex min-w-0 items-center justify-start">
           <div className="small:hidden">
-            <SideMenu />
+            <SideMenu accountLabel={accountLabel} isLoggedIn={isLoggedIn} />
           </div>
           <LocalizedClientLink
             href="/"
@@ -44,14 +57,12 @@ export default function Nav() {
           </LocalizedClientLink>
 
           <ul className="hidden flex-wrap items-center justify-center gap-x-4 gap-y-1 small:flex lg:gap-x-6">
-            {desktopNavLinks.map(({ label, href }) => (
+            {desktopNavLinks.map(({ label, href, testId }) => (
               <li key={label} className="shrink-0">
                 <LocalizedClientLink
                   href={href}
                   className="inline-flex min-h-[44px] items-center text-sm font-medium text-brand-text transition-colors hover:text-brand-accent"
-                  data-testid={
-                    href === "/blog" ? "nav-blog-link" : undefined
-                  }
+                  data-testid={testId}
                 >
                   {label}
                 </LocalizedClientLink>
@@ -64,12 +75,18 @@ export default function Nav() {
         <div className="flex shrink-0 items-center justify-end gap-x-4 small:gap-x-6">
           <div className="hidden items-center small:flex">
             <LocalizedClientLink
-              className="inline-flex min-h-[44px] items-center gap-2 text-sm font-medium text-brand-text transition-colors hover:text-brand-accent"
+              className="inline-flex min-h-[44px] max-w-[11rem] items-center gap-2 text-sm font-medium text-brand-text transition-colors hover:text-brand-accent"
               href="/account"
               data-testid="nav-account-link"
+              aria-label={
+                isLoggedIn
+                  ? `Mi cuenta, ${accountLabel}`
+                  : "Iniciar sesión o registrarse"
+              }
+              title={isLoggedIn ? accountLabel : undefined}
             >
               <User className="h-5 w-5 shrink-0" aria-hidden="true" />
-              Mi cuenta
+              <span className="truncate">{accountLabel}</span>
             </LocalizedClientLink>
           </div>
 

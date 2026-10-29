@@ -9,12 +9,20 @@ import User from "@modules/common/icons/user"
 
 const sideMenuItems = [
   { label: "Inicio", href: "/", testId: "home-link" },
-  { label: "Tienda", href: "/store", testId: "store-link" },
+  { label: "Catálogo", href: "/store", testId: "nav-catalog-link" },
   { label: "Blog", href: "/blog", testId: "blog-link" },
   { label: "Carrito", href: "/cart", testId: "cart-link" },
 ] as const
 
-const SideMenu = () => {
+type SideMenuProps = {
+  accountLabel?: string
+  isLoggedIn?: boolean
+}
+
+const SideMenu = ({
+  accountLabel = "Mi cuenta",
+  isLoggedIn = false,
+}: SideMenuProps) => {
   return (
     <div className="h-full">
       <div className="flex h-full items-center">
@@ -71,14 +79,20 @@ const SideMenu = () => {
                           href="/account"
                           data-testid="account-link"
                           onClick={close}
-                          className="inline-flex min-h-[44px] items-center gap-2 text-2xl font-medium leading-tight text-brand-text transition-colors hover:text-brand-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+                          className="inline-flex min-h-[44px] max-w-[calc(100%-3rem)] items-center gap-2 text-2xl font-medium leading-tight text-brand-text transition-colors hover:text-brand-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-primary"
+                          aria-label={
+                            isLoggedIn
+                              ? `Mi cuenta, ${accountLabel}`
+                              : "Iniciar sesión o registrarse"
+                          }
+                          title={isLoggedIn ? accountLabel : undefined}
                         >
                           <User
                             className="h-7 w-7 shrink-0"
                             size="28"
                             aria-hidden="true"
                           />
-                          Mi cuenta
+                          <span className="truncate">{accountLabel}</span>
                         </LocalizedClientLink>
                         <button
                           type="button"

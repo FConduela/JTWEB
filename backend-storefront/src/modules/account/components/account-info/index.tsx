@@ -1,8 +1,9 @@
 import { Disclosure } from "@headlessui/react"
-import { Badge, Button, clx } from "@medusajs/ui"
+import { Button, clx } from "@medusajs/ui"
 import { useEffect } from "react"
 
 import useToggleState from "@lib/hooks/use-toggle-state"
+import { formatStorefrontError } from "@lib/util/storefront-error"
 import { useFormStatus } from "react-dom"
 
 type AccountInfoProps = {
@@ -13,8 +14,14 @@ type AccountInfoProps = {
   errorMessage?: string
   clearState: () => void
   children?: React.ReactNode
-  'data-testid'?: string
+  "data-testid"?: string
 }
+
+const editButtonClass =
+  "min-h-9 !rounded-full !border !border-brand-accent !bg-transparent !text-brand-accent !shadow-none hover:!bg-brand-accent hover:!text-white"
+
+const saveButtonClass =
+  "w-full small:max-w-[160px] !rounded-full !bg-brand-accent !text-white !shadow-sm hover:!bg-[#c91c22]"
 
 const AccountInfo = ({
   label,
@@ -22,13 +29,18 @@ const AccountInfo = ({
   isSuccess,
   isError,
   clearState,
-  errorMessage = "An error occurred, please try again",
+  errorMessage,
   children,
-  'data-testid': dataTestid
+  "data-testid": dataTestid,
 }: AccountInfoProps) => {
   const { state, close, toggle } = useToggleState()
 
   const { pending } = useFormStatus()
+
+  const resolvedError =
+    errorMessage && typeof errorMessage === "string"
+      ? formatStorefrontError(errorMessage)
+      : "Ocurrió un error. Intenta de nuevo."
 
   const handleToggle = () => {
     clearState()
@@ -42,38 +54,42 @@ const AccountInfo = ({
   }, [isSuccess, close])
 
   return (
-    <div className="text-small-regular" data-testid={dataTestid}>
-      <div className="flex items-end justify-between">
-        <div className="flex flex-col">
-          <span className="uppercase text-ui-fg-base">{label}</span>
-          <div className="flex items-center flex-1 basis-0 justify-end gap-x-4">
+    <div
+      className="rounded-xl border border-gray-200 bg-brand-card p-4 md:p-5"
+      data-testid={dataTestid}
+    >
+      <div className="flex flex-col gap-3 small:flex-row small:items-start small:justify-between">
+        <div className="min-w-0 flex-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-brand-text/60">
+            {label}
+          </span>
+          <div className="mt-1 text-sm text-brand-text md:text-base">
             {typeof currentInfo === "string" ? (
-              <span className="font-semibold" data-testid="current-info">{currentInfo}</span>
+              <span className="font-medium" data-testid="current-info">
+                {currentInfo || "—"}
+              </span>
             ) : (
               currentInfo
             )}
           </div>
         </div>
-        <div>
-          <Button
-            variant="secondary"
-            className="w-[100px] min-h-[25px] py-1"
-            onClick={handleToggle}
-            type={state ? "reset" : "button"}
-            data-testid="edit-button"
-            data-active={state}
-          >
-            {state ? "Cancel" : "Edit"}
-          </Button>
-        </div>
+        <Button
+          variant="secondary"
+          className={editButtonClass}
+          onClick={handleToggle}
+          type={state ? "reset" : "button"}
+          data-testid="edit-button"
+          data-active={state}
+        >
+          {state ? "Cancelar" : "Editar"}
+        </Button>
       </div>
 
-      {/* Success state */}
       <Disclosure>
         <Disclosure.Panel
           static
           className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
+            "overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out",
             {
               "max-h-[1000px] opacity-100": isSuccess,
               "max-h-0 opacity-0": !isSuccess,
@@ -81,18 +97,17 @@ const AccountInfo = ({
           )}
           data-testid="success-message"
         >
-          <Badge className="p-2 my-4" color="green">
-            <span>{label} updated succesfully</span>
-          </Badge>
+          <p className="my-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+            {label} actualizado correctamente.
+          </p>
         </Disclosure.Panel>
       </Disclosure>
 
-      {/* Error state  */}
       <Disclosure>
         <Disclosure.Panel
           static
           className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-hidden",
+            "overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out",
             {
               "max-h-[1000px] opacity-100": isError,
               "max-h-0 opacity-0": !isError,
@@ -100,9 +115,9 @@ const AccountInfo = ({
           )}
           data-testid="error-message"
         >
-          <Badge className="p-2 my-4" color="red">
-            <span>{errorMessage}</span>
-          </Badge>
+          <p className="my-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+            {resolvedError}
+          </p>
         </Disclosure.Panel>
       </Disclosure>
 
@@ -110,23 +125,23 @@ const AccountInfo = ({
         <Disclosure.Panel
           static
           className={clx(
-            "transition-[max-height,opacity] duration-300 ease-in-out overflow-visible",
+            "overflow-visible transition-[max-height,opacity] duration-300 ease-in-out",
             {
               "max-h-[1000px] opacity-100": state,
               "max-h-0 opacity-0": !state,
             }
           )}
         >
-          <div className="flex flex-col gap-y-2 py-4">
+          <div className="flex flex-col gap-y-2 border-t border-gray-100 py-4">
             <div>{children}</div>
-            <div className="flex items-center justify-end mt-2">
+            <div className="mt-2 flex items-center justify-end">
               <Button
                 isLoading={pending}
-                className="w-full small:max-w-[140px]"
+                className={saveButtonClass}
                 type="submit"
                 data-testid="save-button"
               >
-                Save changes
+                Guardar
               </Button>
             </div>
           </div>

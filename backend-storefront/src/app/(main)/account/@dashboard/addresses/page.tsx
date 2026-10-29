@@ -3,33 +3,31 @@ import { notFound } from "next/navigation"
 
 import AddressBook from "@modules/account/components/address-book"
 
-import { getRegion } from "@lib/data/regions"
 import { retrieveCustomer } from "@lib/data/customer"
-import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
 
 export const metadata: Metadata = {
-  title: "Addresses",
-  description: "View your addresses",
+  title: "Direcciones",
+  description: "Administra tus direcciones de envío.",
 }
 
 export default async function Addresses() {
   const customer = await retrieveCustomer()
-  const region = await getRegion(DEFAULT_COUNTRY_CODE)
 
-  if (!customer || !region) {
+  if (!customer) {
     notFound()
   }
 
   return (
     <div className="w-full" data-testid="addresses-page-wrapper">
-      <div className="mb-8 flex flex-col gap-y-4">
-        <h1 className="text-2xl-semi">Shipping Addresses</h1>
-        <p className="text-base-regular">
-          View and update your shipping addresses, you can add as many as you
-          like. Saving your addresses will make them available during checkout.
+      <header className="mb-6 border-b border-gray-200 pb-4 md:mb-8">
+        <h1 className="text-xl font-bold text-brand-accent md:text-2xl">
+          Direcciones de envío
+        </h1>
+        <p className="mt-2 text-sm text-brand-text/80 md:text-base">
+          Agrega o edita direcciones para usarlas más rápido al pagar.
         </p>
-      </div>
-      <AddressBook customer={customer} region={region} />
+      </header>
+      <AddressBook customer={customer} />
     </div>
   )
 }

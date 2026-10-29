@@ -1,9 +1,6 @@
 "use client"
 
-import { Button, Heading } from "@medusajs/ui"
-
 import CartTotals from "@modules/common/components/cart-totals"
-import Divider from "@modules/common/components/divider"
 import DiscountCode from "@modules/checkout/components/discount-code"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import { HttpTypes } from "@medusajs/types"
@@ -12,6 +9,7 @@ type SummaryProps = {
   cart: HttpTypes.StoreCart & {
     promotions: HttpTypes.StorePromotion[]
   }
+  checkoutDisabled?: boolean
 }
 
 function getCheckoutStep(cart: HttpTypes.StoreCart) {
@@ -24,23 +22,33 @@ function getCheckoutStep(cart: HttpTypes.StoreCart) {
   }
 }
 
-const Summary = ({ cart }: SummaryProps) => {
+const Summary = ({ cart, checkoutDisabled = false }: SummaryProps) => {
   const step = getCheckoutStep(cart)
 
   return (
     <div className="flex flex-col gap-y-4">
-      <Heading level="h2" className="text-[2rem] leading-[2.75rem]">
-        Summary
-      </Heading>
-      <DiscountCode cart={cart} />
-      <Divider />
+      <h2 className="border-b border-gray-200 pb-3 text-lg font-bold text-brand-accent md:text-xl">
+        Resumen
+      </h2>
       <CartTotals totals={cart} />
-      <LocalizedClientLink
-        href={"/checkout?step=" + step}
-        data-testid="checkout-button"
-      >
-        <Button className="w-full h-10">Go to checkout</Button>
-      </LocalizedClientLink>
+      <DiscountCode cart={cart} />
+      {checkoutDisabled ? (
+        <span
+          className="inline-flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-full bg-gray-200 px-6 py-2.5 text-sm font-semibold text-brand-text/50"
+          data-testid="checkout-button"
+          aria-disabled="true"
+        >
+          Continuar
+        </span>
+      ) : (
+        <LocalizedClientLink
+          href={"/checkout?step=" + step}
+          data-testid="checkout-button"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand-accent px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-accent/90"
+        >
+          Continuar
+        </LocalizedClientLink>
+      )}
     </div>
   )
 }

@@ -2,10 +2,11 @@
 
 import { useActionState } from "react"
 import { createTransferRequest } from "@lib/data/orders"
-import { Text, Heading, Input, Button, IconButton, Toaster } from "@medusajs/ui"
+import { IconButton } from "@medusajs/ui"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import { CheckCircleMiniSolid, XCircleSolid } from "@medusajs/icons"
 import { useEffect, useState } from "react"
+import Input from "@modules/common/components/input"
 
 export default function TransferRequestForm() {
   const [showSuccess, setShowSuccess] = useState(false)
@@ -23,56 +24,54 @@ export default function TransferRequestForm() {
   }, [state.success, state.order])
 
   return (
-    <div className="flex flex-col gap-y-4 w-full">
-      <div className="grid sm:grid-cols-2 items-center gap-x-8 gap-y-4 w-full">
+    <div className="w-full rounded-2xl border border-gray-200 bg-brand-card p-4 md:p-6">
+      <div className="grid w-full items-start gap-x-8 gap-y-4 sm:grid-cols-2">
         <div className="flex flex-col gap-y-1">
-          <Heading level="h3" className="text-lg text-neutral-950">
-            Order transfers
-          </Heading>
-          <Text className="text-base-regular text-neutral-500">
-            Can&apos;t find the order you are looking for?
-            <br /> Connect an order to your account.
-          </Text>
+          <h3 className="text-base font-semibold text-brand-text">
+            Vincular un pedido
+          </h3>
+          <p className="text-sm text-brand-text/80">
+            ¿No encuentras una compra? Asóciala a tu cuenta con el identificador
+            del pedido.
+          </p>
         </div>
         <form
           action={formAction}
-          className="flex flex-col gap-y-1 sm:items-end"
+          className="flex flex-col gap-y-2 sm:items-stretch"
         >
-          <div className="flex flex-col gap-y-2 w-full">
-            <Input className="w-full" name="order_id" placeholder="Order ID" />
-            <SubmitButton
-              variant="secondary"
-              className="w-fit whitespace-nowrap self-end"
-            >
-              Request transfer
-            </SubmitButton>
-          </div>
+          <Input label="ID del pedido" name="order_id" required />
+          <SubmitButton
+            variant="secondary"
+            className="w-full sm:w-fit sm:self-end !rounded-full !border !border-brand-accent !bg-transparent !text-brand-accent hover:!bg-brand-accent hover:!text-white"
+          >
+            Solicitar vinculación
+          </SubmitButton>
         </form>
       </div>
       {!state.success && state.error && (
-        <Text className="text-base-regular text-rose-500 text-right">
+        <p className="mt-3 text-right text-sm text-brand-accent">
           {state.error}
-        </Text>
+        </p>
       )}
       {showSuccess && (
-        <div className="flex justify-between p-4 bg-neutral-50 shadow-borders-base w-full self-stretch items-center">
-          <div className="flex gap-x-2 items-center">
-            <CheckCircleMiniSolid className="w-4 h-4 text-emerald-500" />
-            <div className="flex flex-col gap-y-1">
-              <Text className="text-medim-pl text-neutral-950">
-                Transfer for order {state.order?.id} requested
-              </Text>
-              <Text className="text-base-regular text-neutral-600">
-                Transfer request email sent to {state.order?.email}
-              </Text>
+        <div className="mt-4 flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-brand-bg/50 p-4">
+          <div className="flex items-center gap-x-2">
+            <CheckCircleMiniSolid className="h-4 w-4 text-emerald-600" />
+            <div className="flex flex-col gap-y-0.5 text-left">
+              <p className="text-sm font-medium text-brand-text">
+                Solicitud enviada para el pedido {state.order?.id}
+              </p>
+              <p className="text-sm text-brand-text/70">
+                Enviamos un correo a {state.order?.email}
+              </p>
             </div>
           </div>
           <IconButton
             variant="transparent"
-            className="h-fit"
+            className="h-fit shrink-0"
             onClick={() => setShowSuccess(false)}
           >
-            <XCircleSolid className="w-4 h-4 text-neutral-500" />
+            <XCircleSolid className="h-4 w-4 text-brand-text/50" />
           </IconButton>
         </div>
       )}

@@ -48,28 +48,31 @@ export default async function RelatedProducts({
 
   return (
     <section
-      className="product-page-constraint"
+      className="border-t border-gray-300 bg-brand-card pb-8 pt-5 md:pb-10 md:pt-6"
       aria-labelledby="related-products-heading"
     >
-      <header className="mb-8 flex flex-col items-center text-center md:mb-16">
+      <div className="content-container product-page-constraint">
+      <header className="mb-4 md:mb-5">
         <h2
           id="related-products-heading"
-          className="max-w-lg text-xl font-semibold text-ui-fg-base md:text-2xl"
+          className="text-center text-sm font-semibold text-brand-text md:text-base"
         >
           Productos relacionados
         </h2>
-        <p className="mt-3 max-w-lg text-base text-gray-600">
-          También te pueden interesar estos productos.
-        </p>
       </header>
 
-      <ul className="grid grid-cols-2 gap-x-4 gap-y-8 small:grid-cols-3 small:gap-x-6 medium:grid-cols-4">
+      <ul className="mx-auto grid max-w-4xl grid-cols-3 gap-3 sm:grid-cols-4 sm:gap-4 md:grid-cols-5 lg:grid-cols-6">
         {products.map((relatedProduct) => (
-          <li key={relatedProduct.id}>
-            <Product region={region} product={relatedProduct} />
+          <li key={relatedProduct.id} className="min-w-0">
+            <Product
+              region={region}
+              product={relatedProduct}
+              variant="compact"
+            />
           </li>
         ))}
       </ul>
+      </div>
     </section>
   )
 }

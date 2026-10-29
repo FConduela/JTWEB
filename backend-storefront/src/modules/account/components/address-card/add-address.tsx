@@ -4,8 +4,9 @@ import { Plus } from "@medusajs/icons"
 import { Button, Heading } from "@medusajs/ui"
 import { useEffect, useState, useActionState } from "react"
 
+import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
 import useToggleState from "@lib/hooks/use-toggle-state"
-import CountrySelect from "@modules/checkout/components/country-select"
+import ChileRegionComunaFields from "@modules/common/components/chile-region-comuna-fields"
 import Input from "@modules/common/components/input"
 import Modal from "@modules/common/components/modal"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
@@ -13,10 +14,8 @@ import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress } from "@lib/data/customer"
 
 const AddAddress = ({
-  region,
   addresses,
 }: {
-  region: HttpTypes.StoreRegion
   addresses: HttpTypes.StoreCustomerAddress[]
 }) => {
   const [successState, setSuccessState] = useState(false)
@@ -48,90 +47,92 @@ const AddAddress = ({
 
   return (
     <>
-      <button
-        className="border border-ui-border-base rounded-rounded p-5 min-h-[220px] h-full w-full flex flex-col justify-between"
+      <Button
+        type="button"
+        variant="secondary"
         onClick={open}
         data-testid="add-address-button"
+        className="inline-flex h-11 w-full items-center justify-center gap-2 !rounded-full !border !border-brand-accent !bg-brand-accent !px-6 !text-sm !font-semibold !text-white transition-colors hover:!bg-[#c91c22] hover:!border-[#c91c22] sm:w-auto"
       >
-        <span className="text-base-semi">New address</span>
-        <Plus />
-      </button>
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Nueva dirección
+      </Button>
 
-      <Modal isOpen={state} close={close} data-testid="add-address-modal">
+      <Modal
+        isOpen={state}
+        close={close}
+        size="large"
+        data-testid="add-address-modal"
+      >
         <Modal.Title>
-          <Heading className="mb-2">Add address</Heading>
+          <Heading className="mb-2 text-brand-text">Agregar dirección</Heading>
         </Modal.Title>
-        <form action={formAction}>
+        <form
+          action={formAction}
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        >
+          <input
+            type="hidden"
+            name="country_code"
+            value={DEFAULT_COUNTRY_CODE}
+          />
           <Modal.Body>
-            <div className="flex flex-col gap-y-2">
-              <div className="grid grid-cols-2 gap-x-2">
+            <div className="flex w-full min-w-0 flex-col gap-y-2">
+              <div className="grid min-w-0 grid-cols-1 gap-x-2 gap-y-2 sm:grid-cols-2">
                 <Input
-                  label="First name"
+                  label="Nombre"
                   name="first_name"
+                  labelPosition="outside"
                   required
                   autoComplete="given-name"
                   data-testid="first-name-input"
                 />
                 <Input
-                  label="Last name"
+                  label="Apellido"
                   name="last_name"
+                  labelPosition="outside"
                   required
                   autoComplete="family-name"
                   data-testid="last-name-input"
                 />
               </div>
               <Input
-                label="Company"
+                label="Empresa"
                 name="company"
-                autoComplete="organization"
+                labelPosition="outside"
                 data-testid="company-input"
               />
+              <ChileRegionComunaFields
+                required
+                provinceTestId="state-input"
+                cityTestId="city-input"
+              />
               <Input
-                label="Address"
+                label="Dirección"
                 name="address_1"
+                labelPosition="outside"
                 required
                 autoComplete="address-line1"
                 data-testid="address-1-input"
               />
               <Input
-                label="Apartment, suite, etc."
+                label="Depto., oficina, etc."
                 name="address_2"
-                autoComplete="address-line2"
+                labelPosition="outside"
                 data-testid="address-2-input"
               />
-              <div className="grid grid-cols-[144px_1fr] gap-x-2">
-                <Input
-                  label="Postal code"
-                  name="postal_code"
-                  required
-                  autoComplete="postal-code"
-                  data-testid="postal-code-input"
-                />
-                <Input
-                  label="City"
-                  name="city"
-                  required
-                  autoComplete="locality"
-                  data-testid="city-input"
-                />
-              </div>
               <Input
-                label="Province / State"
-                name="province"
-                autoComplete="address-level1"
-                data-testid="state-input"
-              />
-              <CountrySelect
-                region={region}
-                name="country_code"
+                label="Código postal"
+                name="postal_code"
+                labelPosition="outside"
                 required
-                autoComplete="country"
-                data-testid="country-select"
+                autoComplete="postal-code"
+                data-testid="postal-code-input"
               />
               <Input
-                label="Phone"
+                label="Teléfono"
                 name="phone"
-                autoComplete="phone"
+                labelPosition="outside"
                 data-testid="phone-input"
               />
             </div>
@@ -145,18 +146,21 @@ const AddAddress = ({
             )}
           </Modal.Body>
           <Modal.Footer>
-            <div className="flex gap-3 mt-6">
-              <Button
-                type="reset"
-                variant="secondary"
-                onClick={close}
-                className="h-10"
-                data-testid="cancel-button"
-              >
-                Cancel
-              </Button>
-              <SubmitButton data-testid="save-button">Save</SubmitButton>
-            </div>
+            <Button
+              type="reset"
+              variant="secondary"
+              onClick={close}
+              className="h-10"
+              data-testid="cancel-button"
+            >
+              Cancelar
+            </Button>
+            <SubmitButton
+              data-testid="save-button"
+              className="!rounded-full !bg-brand-accent !text-white hover:!bg-[#c91c22]"
+            >
+              Guardar
+            </SubmitButton>
           </Modal.Footer>
         </form>
       </Modal>

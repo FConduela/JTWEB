@@ -3,7 +3,7 @@
 import { transferCart } from "@lib/data/customer"
 import { ExclamationCircleSolid } from "@medusajs/icons"
 import { StoreCart, StoreCustomer } from "@medusajs/types"
-import { Button } from "@medusajs/ui"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 function CartMismatchBanner(props: {
@@ -11,44 +11,49 @@ function CartMismatchBanner(props: {
   cart: StoreCart
 }) {
   const { customer, cart } = props
+  const router = useRouter()
   const [isPending, setIsPending] = useState(false)
-  const [actionText, setActionText] = useState("Run transfer again")
+  const [failed, setFailed] = useState(false)
 
   if (!customer || !!cart.customer_id) {
-    return
+    return null
   }
 
   const handleSubmit = async () => {
     try {
       setIsPending(true)
-      setActionText("Transferring..")
-
+      setFailed(false)
       await transferCart()
+      router.refresh()
     } catch {
-      setActionText("Run transfer again")
+      setFailed(true)
+    } finally {
       setIsPending(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center small:p-4 p-2 text-center bg-orange-300 small:gap-2 gap-1 text-sm mt-2 text-orange-800">
-      <div className="flex flex-col small:flex-row small:gap-2 gap-1 items-center">
-        <span className="flex items-center gap-1">
-          <ExclamationCircleSolid className="inline" />
-          Something went wrong when we tried to transfer your cart
+    <div
+      className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950"
+      role="status"
+    >
+      <div className="content-container flex flex-col items-center justify-center gap-2 small:flex-row small:gap-3">
+        <span className="inline-flex items-center gap-2 text-left small:text-center">
+          <ExclamationCircleSolid className="h-4 w-4 shrink-0 text-brand-accent" />
+          <span>
+            {failed
+              ? "No pudimos vincular tu carrito a la cuenta. Intenta de nuevo."
+              : "Tu carrito de invitado aún no está asociado a tu sesión."}
+          </span>
         </span>
-
-        <span>·</span>
-
-        <Button
-          variant="transparent"
-          className="hover:bg-transparent active:bg-transparent focus:bg-transparent disabled:text-orange-500 text-orange-950 p-0 bg-transparent"
-          size="base"
+        <button
+          type="button"
           disabled={isPending}
           onClick={handleSubmit}
+          className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-full border border-brand-accent px-4 text-xs font-semibold text-brand-accent transition-colors hover:bg-brand-accent hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {actionText}
-        </Button>
+          {isPending ? "Vinculando…" : "Vincular carrito"}
+        </button>
       </div>
     </div>
   )

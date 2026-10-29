@@ -14,6 +14,7 @@
     --brand-blue: #81ADDD;
     --brand-peach: #e9935e;
     --brand-accent: #e22127;
+    --brand-field-border: #a8a8a8;
 
     /* Compatibilidad con utilidades previas (CTA secundarios, badges) */
     --brand-secondary: var(--brand-peach);
@@ -39,15 +40,6 @@
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and Edge */
     scrollbar-width: none; /* Firefox */
-  }
-
-  input:focus ~ label,
-  input:not(:placeholder-shown) ~ label {
-    @apply -translate-y-2 text-xsmall-regular;
-  }
-
-  input:focus ~ label {
-    @apply left-0;
   }
 
   input:-webkit-autofill,

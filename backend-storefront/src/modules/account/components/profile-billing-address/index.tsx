@@ -2,8 +2,9 @@
 
 import React, { useEffect, useMemo, useActionState } from "react"
 
+import { DEFAULT_COUNTRY_CODE } from "@lib/constants"
+import ChileRegionComunaFields from "@modules/common/components/chile-region-comuna-fields"
 import Input from "@modules/common/components/input"
-import NativeSelect from "@modules/common/components/native-select"
 
 import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
@@ -11,26 +12,9 @@ import { addCustomerAddress, updateCustomerAddress } from "@lib/data/customer"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
-  regions: HttpTypes.StoreRegion[]
 }
 
-const ProfileBillingAddress: React.FC<MyInformationProps> = ({
-  customer,
-  regions,
-}) => {
-  const regionOptions = useMemo(() => {
-    return (
-      regions
-        ?.map((region) => {
-          return region.countries?.map((country) => ({
-            value: country.iso_2,
-            label: country.display_name,
-          }))
-        })
-        .flat() || []
-    )
-  }, [regions])
-
+const ProfileBillingAddress: React.FC<MyInformationProps> = ({ customer }) => {
   const [successState, setSuccessState] = React.useState(false)
 
   const billingAddress = customer.addresses?.find(
@@ -63,20 +47,15 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
 
   const currentInfo = useMemo(() => {
     if (!billingAddress) {
-      return "No billing address"
+      return "Sin dirección de facturación"
     }
 
-    const country =
-      regionOptions?.find(
-        (country) => country?.value === billingAddress.country_code
-      )?.label || billingAddress.country_code?.toUpperCase()
-
     return (
-      <div className="flex flex-col font-semibold" data-testid="current-info">
+      <div className="flex flex-col font-medium" data-testid="current-info">
         <span>
           {billingAddress.first_name} {billingAddress.last_name}
         </span>
-        <span>{billingAddress.company}</span>
+        {billingAddress.company ? <span>{billingAddress.company}</span> : null}
         <span>
           {billingAddress.address_1}
           {billingAddress.address_2 ? `, ${billingAddress.address_2}` : ""}
@@ -84,104 +63,95 @@ const ProfileBillingAddress: React.FC<MyInformationProps> = ({
         <span>
           {billingAddress.postal_code}, {billingAddress.city}
         </span>
-        <span>{country}</span>
+        <span>Chile</span>
       </div>
     )
-  }, [billingAddress, regionOptions])
+  }, [billingAddress])
 
   return (
     <form action={formAction} onReset={() => clearState()} className="w-full">
       <input type="hidden" name="addressId" value={billingAddress?.id} />
+      <input
+        type="hidden"
+        name="country_code"
+        value={DEFAULT_COUNTRY_CODE}
+      />
       <AccountInfo
-        label="Billing address"
+        label="Dirección de facturación"
         currentInfo={currentInfo}
         isSuccess={successState}
         isError={!!state.error}
+        errorMessage={state.error}
         clearState={clearState}
         data-testid="account-billing-address-editor"
       >
         <div className="grid grid-cols-1 gap-y-2">
-          <div className="grid grid-cols-2 gap-x-2">
+          <div className="grid grid-cols-1 gap-x-2 gap-y-2 sm:grid-cols-2">
             <Input
-              label="First name"
+              label="Nombre"
               name="first_name"
+              labelPosition="outside"
               defaultValue={billingAddress?.first_name || undefined}
               required
               data-testid="billing-first-name-input"
             />
             <Input
-              label="Last name"
+              label="Apellido"
               name="last_name"
+              labelPosition="outside"
               defaultValue={billingAddress?.last_name || undefined}
               required
               data-testid="billing-last-name-input"
             />
           </div>
           <Input
-            label="Company"
+            label="Empresa"
             name="company"
+            labelPosition="outside"
             defaultValue={billingAddress?.company || undefined}
             data-testid="billing-company-input"
           />
-          <Input
-            label="Phone"
-            name="phone"
-            type="phone"
-            autoComplete="phone"
+          <ChileRegionComunaFields
+            key={billingAddress?.id ?? "new-billing"}
             required
-            defaultValue={billingAddress?.phone ?? customer?.phone ?? ""}
-            data-testid="billing-phone-input"
+            defaultProvince={billingAddress?.province}
+            defaultCity={billingAddress?.city}
+            provinceTestId="billing-province-input"
+            cityTestId="billing-city-input"
           />
           <Input
-            label="Address"
+            label="Dirección"
             name="address_1"
+            labelPosition="outside"
             defaultValue={billingAddress?.address_1 || undefined}
             required
             data-testid="billing-address-1-input"
           />
           <Input
-            label="Apartment, suite, etc."
+            label="Depto., oficina, etc."
             name="address_2"
+            labelPosition="outside"
             defaultValue={billingAddress?.address_2 || undefined}
             data-testid="billing-address-2-input"
           />
-          <div className="grid grid-cols-[144px_1fr] gap-x-2">
-            <Input
-              label="Postal code"
-              name="postal_code"
-              defaultValue={billingAddress?.postal_code || undefined}
-              required
-              data-testid="billing-postcal-code-input"
-            />
-            <Input
-              label="City"
-              name="city"
-              defaultValue={billingAddress?.city || undefined}
-              required
-              data-testid="billing-city-input"
-            />
-          </div>
           <Input
-            label="Province"
-            name="province"
-            defaultValue={billingAddress?.province || undefined}
-            data-testid="billing-province-input"
-          />
-          <NativeSelect
-            name="country_code"
-            defaultValue={billingAddress?.country_code || undefined}
+            label="Código postal"
+            name="postal_code"
+            labelPosition="outside"
+            defaultValue={billingAddress?.postal_code || undefined}
             required
-            data-testid="billing-country-code-select"
-          >
-            <option value="">-</option>
-            {regionOptions.map((option, i) => {
-              return (
-                <option key={i} value={option?.value}>
-                  {option?.label}
-                </option>
-              )
-            })}
-          </NativeSelect>
+            data-testid="billing-postcal-code-input"
+          />
+          <Input
+            label="Teléfono"
+            name="phone"
+            type="tel"
+            labelPosition="outside"
+            autoComplete="tel"
+            required
+            defaultValue={billingAddress?.phone ?? customer?.phone ?? ""}
+            data-testid="billing-phone-input"
+          />
         </div>
       </AccountInfo>
     </form>

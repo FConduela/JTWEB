@@ -2,8 +2,9 @@
 
 import { sdk } from "@lib/config"
 import medusaError from "@lib/util/medusa-error"
+import { formatStorefrontError } from "@lib/util/storefront-error"
 import { HttpTypes } from "@medusajs/types"
-import { revalidatePath, revalidateTag } from "next/cache"
+import { revalidatePath, revalidateTag, unstable_noStore } from "next/cache"
 import { redirect } from "next/navigation"
 import {
   getAuthHeaders,
@@ -19,7 +20,7 @@ import { getLocale } from "@lib/data/locale-actions"
 const CART_CHECKOUT_FIELDS =
   "*items, *region, *items.product, *items.variant, *items.thumbnail, *items.metadata, +items.total, *promotions, +shipping_methods.name, *shipping_address, *billing_address, email, *payment_collection, *payment_collection.payment_sessions"
 
-async function revalidateCartCache() {
+export async function revalidateCartCache() {
   revalidateTag("cart")
   revalidateTag("carts")
 
@@ -36,6 +37,26 @@ async function revalidateCartCache() {
   }
 
   revalidatePath("/checkout", "page")
+  revalidatePath("/cart", "page")
+  revalidatePath("/account", "layout")
+  revalidatePath("/", "layout")
+}
+
+/** Tras login/OAuth: vincula carrito y revalida (solo Server Action). */
+export async function finalizeCartAfterLogin() {
+  await linkGuestCartToCustomerIfNeeded()
+  await revalidateCartCache()
+}
+
+function isCartLineItemNotFoundError(error: unknown): boolean {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : ""
+
+  return /line item.*not found/i.test(message)
 }
 
 /**
@@ -73,17 +94,10 @@ export async function retrieveCart(cartId?: string, fields?: string) {
     .catch(() => null)
 }
 
-/**
- * Fetches the cart directly from Medusa without Next.js data cache.
- * Use before payment confirmation to read the latest payment session.
- */
-export async function retrieveFreshCart(cartId?: string) {
-  const id = cartId || (await getCartId())
-
-  if (!id) {
-    return null
-  }
-
+async function fetchStoreCartById(
+  id: string,
+  fields: string = CART_CHECKOUT_FIELDS
+): Promise<HttpTypes.StoreCart | null> {
   const headers = {
     ...(await getAuthHeaders()),
   }
@@ -91,14 +105,82 @@ export async function retrieveFreshCart(cartId?: string) {
   return sdk.client
     .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${id}`, {
       method: "GET",
-      query: {
-        fields: CART_CHECKOUT_FIELDS,
-      },
+      query: { fields },
       headers,
       cache: "no-store",
     })
     .then(({ cart }: { cart: HttpTypes.StoreCart }) => cart)
     .catch(() => null)
+}
+
+/** Transfiere el carrito de invitado al cliente y actualiza la cookie con el id activo. */
+export async function transferCartToCustomer() {
+  const cartId = await getCartId()
+
+  if (!cartId) {
+    return
+  }
+
+  const headers = await getAuthHeaders()
+
+  if (!("authorization" in headers)) {
+    return
+  }
+
+  const { cart } = await sdk.store.cart.transferCart(cartId, {}, headers)
+
+  if (cart?.id) {
+    await setCartId(cart.id)
+  }
+
+  await revalidateCartCache()
+
+  const customerCacheTag = await getCacheTag("customers")
+  if (customerCacheTag) {
+    revalidateTag(customerCacheTag)
+  }
+}
+
+/**
+ * Vincula el carrito de invitado al cliente (solo desde Server Action o Route Handler).
+ * No llamar durante el render de RSC: modifica cookies vía setCartId.
+ */
+export async function linkGuestCartToCustomerIfNeeded() {
+  const headers = await getAuthHeaders()
+
+  if (!("authorization" in headers)) {
+    return
+  }
+
+  const cartId = await getCartId()
+
+  if (!cartId) {
+    return
+  }
+
+  const cart = await fetchStoreCartById(cartId, "id,customer_id")
+
+  if (!cart || cart.customer_id) {
+    return
+  }
+
+  await transferCartToCustomer()
+}
+
+/**
+ * Fetches the cart directly from Medusa without Next.js data cache.
+ * Use before payment confirmation to read the latest payment session.
+ */
+export async function retrieveFreshCart(cartId?: string) {
+  unstable_noStore()
+
+  const id = cartId || (await getCartId())
+
+  if (!id) {
+    return null
+  }
+
+  return fetchStoreCartById(id)
 }
 
 export async function getOrSetCart(countryCode: string) {
@@ -124,15 +206,12 @@ export async function getOrSetCart(countryCode: string) {
     cart = cartResp.cart
 
     await setCartId(cart.id)
-
-    const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    await revalidateCartCache()
   }
 
   if (cart && cart?.region_id !== region.id) {
     await sdk.store.cart.update(cart.id, { region_id: region.id }, {}, headers)
-    const cartCacheTag = await getCacheTag("carts")
-    revalidateTag(cartCacheTag)
+    await revalidateCartCache()
   }
 
   return cart
@@ -181,8 +260,8 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .createLineItem(
+  try {
+    await sdk.store.cart.createLineItem(
       cart.id,
       {
         variant_id: variantId,
@@ -191,14 +270,10 @@ export async function addToCart({
       {},
       headers
     )
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+    await revalidateCartCache()
+  } catch (error) {
+    medusaError(error)
+  }
 }
 
 export async function updateLineItem({
@@ -222,16 +297,26 @@ export async function updateLineItem({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .updateLineItem(cartId, lineId, { quantity }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  try {
+    await sdk.store.cart.updateLineItem(
+      cartId,
+      lineId,
+      { quantity },
+      {},
+      headers
+    )
+    await revalidateCartCache()
+  } catch (error) {
+    await revalidateCartCache()
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+    if (isCartLineItemNotFoundError(error)) {
+      throw new Error(
+        "Este artículo ya no está en tu carrito. Recargamos el carrito."
+      )
+    }
+
+    medusaError(error)
+  }
 }
 
 export async function deleteLineItem(lineId: string) {
@@ -249,16 +334,20 @@ export async function deleteLineItem(lineId: string) {
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .deleteLineItem(cartId, lineId, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
+  try {
+    await sdk.store.cart.deleteLineItem(cartId, lineId, {}, headers)
+    await revalidateCartCache()
+  } catch (error) {
+    await revalidateCartCache()
 
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+    if (isCartLineItemNotFoundError(error)) {
+      throw new Error(
+        "Este artículo ya no está en tu carrito. Recargamos el carrito."
+      )
+    }
+
+    medusaError(error)
+  }
 }
 
 export async function setShippingMethod({
@@ -308,16 +397,12 @@ export async function applyPromotions(codes: string[]) {
     ...(await getAuthHeaders()),
   }
 
-  return sdk.store.cart
-    .update(cartId, { promo_codes: codes }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-
-      const fulfillmentCacheTag = await getCacheTag("fulfillment")
-      revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+  try {
+    await sdk.store.cart.update(cartId, { promo_codes: codes }, {}, headers)
+    await revalidateCartCache()
+  } catch (error) {
+    throw new Error(formatStorefrontError(error))
+  }
 }
 
 export async function applyGiftCard(code: string) {
@@ -379,13 +464,13 @@ export async function submitPromotionForm(
 export async function setAddresses(currentState: unknown, formData: FormData) {
   try {
     if (!formData) {
-      throw new Error("No form data found when setting addresses")
+      throw new Error("No se recibieron datos del formulario.")
     }
 
     const cartId = await getCartId()
 
     if (!cartId) {
-      throw new Error("No existing cart found when setting addresses")
+      throw new Error("No encontramos un carrito activo.")
     }
 
     const data = {
@@ -423,8 +508,8 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 
     await updateCart(data)
     await revalidateCartCache()
-  } catch (e: any) {
-    return e.message
+  } catch (e: unknown) {
+    return formatStorefrontError(e)
   }
 
   redirect(`/checkout?step=delivery`)

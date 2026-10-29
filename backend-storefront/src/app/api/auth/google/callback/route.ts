@@ -1,3 +1,10 @@
+import { linkGuestCartToCustomerIfNeeded } from "@lib/data/cart"
+import {
+  customerNeedsNameBackfill,
+  extractGoogleProfileFromJwtPayload,
+  googleProfileForNewCustomer,
+} from "@lib/util/google-auth-profile"
+import { isBlankCustomerField } from "@lib/util/customer-display"
 import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { revalidateTag } from "next/cache"
@@ -71,6 +78,73 @@ async function createCustomer(
     },
     body: JSON.stringify(body),
   })
+}
+
+async function updateCustomerProfile(
+  token: string,
+  body: { first_name?: string; last_name?: string }
+) {
+  return fetch(`${MEDUSA_BACKEND_URL}/store/customers/me`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(token),
+    },
+    body: JSON.stringify(body),
+  })
+}
+
+/** Rellena nombre/apellido en Medusa solo si faltan; no sobrescribe datos editados por el usuario. */
+async function backfillCustomerNamesFromGoogleIfMissing(
+  token: string,
+  jwtPayload: Record<string, unknown> | null
+) {
+  const meRes = await fetchCustomerMe(token)
+
+  if (!meRes.ok) {
+    return
+  }
+
+  const data = (await meRes.json()) as {
+    customer?: { first_name?: string | null; last_name?: string | null }
+  }
+
+  const customer = data.customer
+
+  if (!customer || !customerNeedsNameBackfill(customer)) {
+    return
+  }
+
+  const profile = extractGoogleProfileFromJwtPayload(jwtPayload)
+  const patch: { first_name?: string; last_name?: string } = {}
+
+  if (
+    isBlankCustomerField(customer.first_name) &&
+    !isBlankCustomerField(profile.firstName)
+  ) {
+    patch.first_name = profile.firstName
+  }
+
+  if (
+    isBlankCustomerField(customer.last_name) &&
+    !isBlankCustomerField(profile.lastName)
+  ) {
+    patch.last_name = profile.lastName
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return
+  }
+
+  const updateRes = await updateCustomerProfile(token, patch)
+
+  if (!updateRes.ok) {
+    console.warn(
+      "No se pudo completar nombre del cliente tras login con Google:",
+      updateRes.status,
+      await updateRes.text().catch(() => "")
+    )
+  }
 }
 
 function shouldSkipCustomerCreate(errorText: string) {
@@ -165,15 +239,10 @@ async function resolveAuthenticatedToken(initialToken: string) {
       ""
 
     if (email) {
-      const createRes = await createCustomer(authToken, {
-        email,
-        first_name:
-          (payload?.user_metadata as { given_name?: string } | undefined)
-            ?.given_name ?? "Usuario",
-        last_name:
-          (payload?.user_metadata as { family_name?: string } | undefined)
-            ?.family_name ?? "Google",
-      })
+      const createRes = await createCustomer(
+        authToken,
+        googleProfileForNewCustomer(payload)
+      )
 
       if (createRes.ok) {
         const createdRefresh = await refreshAuthToken(authToken)
@@ -244,8 +313,10 @@ export async function GET(request: NextRequest) {
 
     const authToken = await resolveAuthenticatedToken(data.token)
 
+    const initialJwtPayload = decodeJwtPayload(data.token)
+
     if (!authToken) {
-      const payload = decodeJwtPayload(data.token)
+      const payload = initialJwtPayload
       const email =
         (payload?.user_metadata as { email?: string } | undefined)?.email ??
         (payload?.email as string | undefined) ??
@@ -265,6 +336,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    await backfillCustomerNamesFromGoogleIfMissing(
+      authToken,
+      initialJwtPayload ?? decodeJwtPayload(authToken)
+    )
+
     const cookieStore = await cookies()
     cookieStore.set("_medusa_jwt", authToken, {
       path: "/",
@@ -277,7 +353,18 @@ export async function GET(request: NextRequest) {
     revalidateTag("customer")
     revalidateTag("cart")
 
-    return NextResponse.redirect(new URL("/account", request.url))
+    try {
+      await linkGuestCartToCustomerIfNeeded()
+    } catch (linkError) {
+      console.error(
+        "No se pudo vincular el carrito tras login con Google:",
+        linkError
+      )
+    }
+
+    return NextResponse.redirect(
+      new URL("/account?cart_sync=1", request.url)
+    )
   } catch (err) {
     console.error("Error en el callback de Auth:", err)
   }

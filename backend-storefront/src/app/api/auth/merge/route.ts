@@ -1,4 +1,6 @@
+import { linkGuestCartToCustomerIfNeeded } from "@lib/data/cart"
 import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { revalidateTag } from "next/cache"
 
 const PUBLISHABLE_API_KEY =
@@ -43,10 +45,19 @@ export async function GET(request: NextRequest) {
 
     const redirectResponse = NextResponse.redirect(
       new URL(
-        `/account?message=${encodeURIComponent(message)}`,
+        `/account?cart_sync=1&message=${encodeURIComponent(message)}`,
         request.url
       )
     )
+
+    const cookieStore = await cookies()
+    cookieStore.set("_medusa_jwt", data.token, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    })
 
     redirectResponse.cookies.set("_medusa_jwt", data.token, {
       path: "/",
@@ -58,6 +69,15 @@ export async function GET(request: NextRequest) {
 
     revalidateTag("customer")
     revalidateTag("cart")
+
+    try {
+      await linkGuestCartToCustomerIfNeeded()
+    } catch (linkError) {
+      console.error(
+        "No se pudo vincular el carrito tras unificar cuentas:",
+        linkError
+      )
+    }
 
     return redirectResponse
   } catch (error) {

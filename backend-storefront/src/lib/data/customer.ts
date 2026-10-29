@@ -6,6 +6,11 @@ import { HttpTypes } from "@medusajs/types"
 import { revalidateTag } from "next/cache"
 import { redirect } from "next/navigation"
 import {
+  linkGuestCartToCustomerIfNeeded,
+  revalidateCartCache,
+  transferCartToCustomer,
+} from "./cart"
+import {
   getAuthHeaders,
   getCacheOptions,
   getCacheTag,
@@ -96,9 +101,13 @@ export async function signup(_currentState: unknown, formData: FormData) {
     const customerCacheTag = await getCacheTag("customers")
     revalidateTag(customerCacheTag)
 
-    await transferCart()
+    try {
+      await linkGuestCartToCustomerIfNeeded()
+    } catch (linkError: unknown) {
+      console.error("No se pudo vincular el carrito tras el registro:", linkError)
+    }
 
-    return createdCustomer
+    redirect("/account?cart_sync=1")
   } catch (error: any) {
     return error.toString()
   }
@@ -121,10 +130,12 @@ export async function login(_currentState: unknown, formData: FormData) {
   }
 
   try {
-    await transferCart()
-  } catch (error: any) {
-    return error.toString()
+    await linkGuestCartToCustomerIfNeeded()
+  } catch (error: unknown) {
+    console.error("No se pudo vincular el carrito tras el login:", error)
   }
+
+  redirect("/account?cart_sync=1")
 }
 
 export async function signout() {
@@ -143,20 +154,12 @@ export async function signout() {
   redirect("/account")
 }
 
+/** @deprecated Usa `transferCartToCustomer` desde `@lib/data/cart`. */
 export async function transferCart() {
-  const cartId = await getCartId()
-
-  if (!cartId) {
-    return
-  }
-
-  const headers = await getAuthHeaders()
-
-  await sdk.store.cart.transferCart(cartId, {}, headers)
-
-  const cartCacheTag = await getCacheTag("carts")
-  revalidateTag(cartCacheTag)
+  return transferCartToCustomer()
 }
+
+export { linkGuestCartToCustomerIfNeeded }
 
 export const addCustomerAddress = async (
   currentState: Record<string, unknown>,

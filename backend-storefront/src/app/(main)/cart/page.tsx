@@ -1,16 +1,16 @@
-import { retrieveCart } from "@lib/data/cart"
+import { retrieveFreshCart } from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
 import CartTemplate from "@modules/cart/templates"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 export const metadata: Metadata = {
-  title: "Cart",
-  description: "View your cart",
+  title: "Carrito | Jugando Toy",
+  description: "Revisa los productos en tu carrito de compras",
 }
 
 export default async function Cart() {
-  const cart = await retrieveCart().catch((error) => {
+  const cart = await retrieveFreshCart().catch((error) => {
     console.error(error)
     return notFound()
   })

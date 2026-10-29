@@ -34,14 +34,17 @@ export default function CollectionTemplate({
     <main className="content-container py-6">
       <div className="flex flex-col small:flex-row small:items-stretch small:gap-8">
         <RefinementList>
+          <h1
+            className="mb-5 border-b border-gray-300 pb-4 text-lg font-bold leading-tight text-brand-accent md:text-xl"
+            data-testid="collection-page-title"
+          >
+            {collection.title}
+          </h1>
           <CatalogSidebar />
         </RefinementList>
         <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
-          <header className="mb-6 md:mb-8">
-            <h1
-              className="text-2xl font-semibold text-brand-text md:text-3xl"
-              data-testid="collection-page-title"
-            >
+          <header className="mb-4 small:hidden">
+            <h1 className="border-b border-gray-300 pb-3 text-xl font-bold text-brand-accent">
               {collection.title}
             </h1>
           </header>

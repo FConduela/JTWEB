@@ -47,9 +47,20 @@ export default function CategoryTemplate({
     <main className="content-container py-6" data-testid="category-container">
       <div className="flex flex-col small:flex-row small:items-stretch small:gap-8">
         <RefinementList data-testid="sort-by-container">
+          <h1
+            className="mb-5 border-b border-gray-300 pb-4 text-lg font-bold leading-tight text-brand-accent md:text-xl"
+            data-testid="category-page-title"
+          >
+            {category.name}
+          </h1>
           <CatalogSidebar />
         </RefinementList>
         <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
+          <header className="mb-4 small:hidden">
+            <h1 className="border-b border-gray-300 pb-3 text-xl font-bold text-brand-accent">
+              {category.name}
+            </h1>
+          </header>
           {reversedParents.length > 0 && (
             <nav
               aria-label="Jerarquía de categoría"
@@ -74,19 +85,11 @@ export default function CategoryTemplate({
             </nav>
           )}
 
-          <header className="mb-6 md:mb-8">
-            <h1
-              className="text-2xl font-semibold text-brand-text md:text-3xl"
-              data-testid="category-page-title"
-            >
-              {category.name}
-            </h1>
-            {category.description ? (
-              <p className="mt-3 text-base text-brand-text/80">
-                {category.description}
-              </p>
-            ) : null}
-          </header>
+          {category.description ? (
+            <p className="mb-4 text-base text-brand-text/80 small:mb-6">
+              {category.description}
+            </p>
+          ) : null}
 
           {category.category_children &&
           category.category_children.length > 0 ? (

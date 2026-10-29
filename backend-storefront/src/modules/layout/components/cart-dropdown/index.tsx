@@ -37,9 +37,21 @@ const CartDropdown = ({
     }, 0) || 0
 
   const subtotal = cartState?.subtotal ?? 0
-  const itemRef = useRef<number>(totalItems || 0)
+  const pathname = usePathname()
+  const {
+    registerCartHandlers,
+    isOpenCartAfterAddPending,
+    clearOpenCartAfterAddPending,
+  } = useCartUI()
+
+  const itemCount = cartState?.items?.length ?? 0
 
   const timedOpen = () => {
+    const hasItems = (cartState?.items?.length ?? 0) > 0
+    if (!hasItems) {
+      return
+    }
+
     open()
 
     const timer = setTimeout(close, 5000)
@@ -48,6 +60,10 @@ const CartDropdown = ({
   }
 
   const openAndCancel = () => {
+    if (isOpenCartAfterAddPending() && itemCount <= 0) {
+      return
+    }
+
     if (activeTimer) {
       clearTimeout(activeTimer)
     }
@@ -64,33 +80,43 @@ const CartDropdown = ({
     }
   }, [activeTimer])
 
-  const pathname = usePathname()
-  const { registerCartHandlers } = useCartUI()
-
-  // open cart dropdown when modifying the cart items, but only if we're not on the cart page
+  // Tras "Agregar al carrito": abrir solo cuando el RSC ya trajo líneas (evita flash vacío)
   useEffect(() => {
-    if (itemRef.current !== totalItems && !pathname.includes("/cart")) {
-      timedOpen()
+    if (pathname.includes("/cart")) {
+      if (isOpenCartAfterAddPending()) {
+        clearOpenCartAfterAddPending()
+      }
+      return
     }
 
-    itemRef.current = totalItems
-  }, [totalItems, pathname])
+    if (!isOpenCartAfterAddPending()) {
+      return
+    }
+
+    if (itemCount <= 0) {
+      return
+    }
+
+    clearOpenCartAfterAddPending()
+    timedOpen()
+  }, [
+    itemCount,
+    cartState?.id,
+    pathname,
+    isOpenCartAfterAddPending,
+    clearOpenCartAfterAddPending,
+  ])
 
   useEffect(() => {
     return registerCartHandlers(
       () => {
-        setActiveTimer((timer) => {
-          if (timer) {
-            clearTimeout(timer)
-          }
-
-          return undefined
-        })
-        setCartDropdownOpen(true)
+        if ((cartState?.items?.length ?? 0) > 0) {
+          timedOpen()
+        }
       },
       () => setCartDropdownOpen(false)
     )
-  }, [registerCartHandlers])
+  }, [registerCartHandlers, cartState?.items?.length])
 
   return (
     <div
@@ -109,7 +135,7 @@ const CartDropdown = ({
             <ShoppingCart className="h-6 w-6" />
             {totalItems > 0 && (
               <span
-                className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-secondary px-1 text-[10px] font-bold leading-none text-brand-text"
+                className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] font-bold leading-none text-white"
                 aria-hidden="true"
               >
                 {totalItems}
@@ -238,7 +264,7 @@ const CartDropdown = ({
                       Subtotal
                     </span>
                     <span
-                      className="text-base font-bold text-gray-900"
+                      className="text-base font-bold text-brand-accent"
                       data-testid="cart-subtotal"
                       data-value={subtotal}
                     >

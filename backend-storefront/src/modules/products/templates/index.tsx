@@ -122,18 +122,18 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
         }}
       />
       <main id="product-page">
-        <div className="content-container py-4">
+        <div className="content-container pt-3 pb-1 md:pt-4 md:pb-1">
           <Breadcrumbs items={breadcrumbItems} />
         </div>
         <section
           aria-labelledby="product-heading"
-          className="content-container py-6 md:py-10"
+          className="content-container pt-2 pb-4 md:pt-3 md:pb-6"
           data-testid="product-container"
         >
-          <div className="relative flex flex-col gap-y-4 lg:grid lg:grid-cols-12 lg:gap-x-12 lg:gap-y-8">
+          <div className="relative flex flex-col gap-y-4 lg:grid lg:grid-cols-12 lg:items-stretch lg:gap-x-6 lg:gap-y-8">
             <div className="order-1 flex min-h-0 flex-col lg:col-span-7 lg:row-start-1 lg:h-full">
               <div
-                className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-gray-200/90 bg-brand-card p-4 shadow-[0_2px_10px_rgba(74,74,74,0.1)] md:p-6 lg:min-h-full"
+                className="flex h-full min-h-0 w-full flex-col rounded-2xl border border-gray-200/90 bg-brand-card p-4 shadow-[0_2px_12px_rgba(74,74,74,0.2)] md:p-6 lg:min-h-full"
                 data-testid="product-gallery-panel"
               >
                 <ImageGallery images={images} productTitle={product.title} />
@@ -141,7 +141,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             </div>
 
             <aside className="order-2 flex min-h-0 flex-col lg:col-span-5 lg:row-start-1 lg:h-full">
-              <div className="flex w-full flex-col rounded-2xl border border-gray-200/90 bg-brand-card p-6 shadow-[0_2px_10px_rgba(74,74,74,0.1)] lg:sticky lg:top-24 lg:mx-auto lg:h-full lg:max-h-full lg:min-h-0 lg:max-w-[500px] lg:flex-1">
+              <div className="flex min-h-0 w-full max-w-[500px] flex-1 flex-col rounded-2xl border border-gray-200/90 bg-brand-card p-6 shadow-[0_2px_12px_rgba(74,74,74,0.2)] lg:sticky lg:top-24 lg:max-h-full">
                 <Suspense
                   fallback={
                     <ProductActions
@@ -166,10 +166,7 @@ const ProductTemplate: React.FC<ProductTemplateProps> = ({
             </div>
           </div>
         </section>
-        <div
-          className="content-container my-12 md:my-16 lg:my-32"
-          data-testid="related-products-container"
-        >
+        <div data-testid="related-products-container">
           <Suspense fallback={<SkeletonRelatedProducts />}>
             <RelatedProducts product={product} countryCode={countryCode} />
           </Suspense>

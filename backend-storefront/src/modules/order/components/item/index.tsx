@@ -22,12 +22,16 @@ const Item = ({ item, currencyCode }: ItemProps) => {
 
       <Table.Cell className="text-left">
         <Text
-          className="txt-medium-plus text-ui-fg-base"
+          className="txt-medium-plus font-semibold text-brand-text"
           data-testid="product-name"
         >
           {item.product_title}
         </Text>
-        <LineItemOptions variant={item.variant} data-testid="product-variant" />
+        <LineItemOptions
+          variant={item.variant}
+          data-testid="product-variant"
+          className="font-semibold text-brand-text"
+        />
       </Table.Cell>
 
       <Table.Cell className="!pr-0">

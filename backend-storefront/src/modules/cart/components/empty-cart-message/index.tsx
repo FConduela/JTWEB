@@ -1,23 +1,21 @@
-import { Heading, Text } from "@medusajs/ui"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
-import InteractiveLink from "@modules/common/components/interactive-link"
-
+/** Mensaje vacío dentro de la tarjeta de productos (mismo layout que carrito con ítems). */
 const EmptyCartMessage = () => {
   return (
-    <div className="py-48 px-2 flex flex-col justify-center items-start" data-testid="empty-cart-message">
-      <Heading
-        level="h1"
-        className="flex flex-row text-3xl-regular gap-x-2 items-baseline"
+    <div
+      className="rounded-lg border border-dashed border-gray-200 bg-brand-bg/50 px-4 py-10 text-center"
+      data-testid="empty-cart-message"
+    >
+      <p className="text-sm text-brand-text/80 md:text-base">
+        Aún no tienes productos en tu carrito.
+      </p>
+      <LocalizedClientLink
+        href="/store"
+        className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-brand-accent px-8 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#c91c22] hover:shadow-md active:scale-[0.98]"
       >
-        Cart
-      </Heading>
-      <Text className="text-base-regular mt-4 mb-6 max-w-[32rem]">
-        You don&apos;t have anything in your cart. Let&apos;s change that, use
-        the link below to start browsing our products.
-      </Text>
-      <div>
-        <InteractiveLink href="/store">Explore products</InteractiveLink>
-      </div>
+        Explorar productos
+      </LocalizedClientLink>
     </div>
   )
 }

@@ -14,7 +14,7 @@ const RefinementList = ({
 }: RefinementListProps) => {
   return (
     <aside
-      className="mb-8 hidden w-full shrink-0 small:mb-0 small:block small:min-h-full small:min-w-[250px] small:max-w-[280px] small:self-stretch small:rounded-2xl small:border small:border-gray-200 small:bg-brand-card small:py-8 small:pl-6 small:pr-8 lg:pr-12"
+      className="mb-8 hidden w-full shrink-0 small:mb-0 small:block small:min-h-full small:w-[200px] small:min-w-[200px] small:max-w-[200px] small:self-stretch small:rounded-2xl small:border small:border-gray-200 small:bg-brand-card small:px-4 small:pb-8 small:pt-6 small:pr-5 lg:pr-6"
       aria-label="Filtros del catálogo"
       data-testid={dataTestId}
     >

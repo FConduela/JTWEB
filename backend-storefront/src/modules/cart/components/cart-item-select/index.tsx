@@ -14,12 +14,22 @@ import ChevronDown from "@modules/common/icons/chevron-down"
 
 type NativeSelectProps = {
   placeholder?: string
+  showPlaceholder?: boolean
   errors?: Record<string, unknown>
   touched?: Record<string, unknown>
 } & Omit<SelectHTMLAttributes<HTMLSelectElement>, "size">
 
 const CartItemSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
-  ({ placeholder = "Select...", className, children, ...props }, ref) => {
+  (
+    {
+      placeholder = "Cant.",
+      showPlaceholder = true,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     const innerRef = useRef<HTMLSelectElement>(null)
     const [isPlaceholder, setIsPlaceholder] = useState(false)
 
@@ -52,11 +62,13 @@ const CartItemSelect = forwardRef<HTMLSelectElement, NativeSelectProps>(
           <select
             ref={innerRef}
             {...props}
-            className="appearance-none bg-transparent border-none px-4 transition-colors duration-150 focus:border-gray-700 outline-none w-16 h-16 items-center justify-center"
+            className="h-10 w-full min-w-[2.75rem] cursor-pointer appearance-none border-none bg-transparent px-2 pr-6 text-center text-sm font-medium text-brand-text outline-none transition-colors duration-150 focus:border-brand-accent"
           >
-            <option disabled value="">
-              {placeholder}
-            </option>
+            {showPlaceholder ? (
+              <option disabled value="">
+                {placeholder}
+              </option>
+            ) : null}
             {children}
           </select>
           <span className="absolute flex pointer-events-none justify-end w-8 group-hover:animate-pulse">

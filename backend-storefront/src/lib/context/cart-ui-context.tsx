@@ -11,6 +11,9 @@ import React, {
 type CartUIContextValue = {
   openCart: () => void
   closeCart: () => void
+  scheduleOpenCartAfterAdd: () => void
+  isOpenCartAfterAddPending: () => boolean
+  clearOpenCartAfterAddPending: () => void
   registerCartHandlers: (
     open: () => void,
     close: () => void
@@ -22,6 +25,7 @@ const CartUIContext = createContext<CartUIContextValue | null>(null)
 export const CartUIProvider = ({ children }: { children: React.ReactNode }) => {
   const openHandlerRef = useRef<(() => void) | null>(null)
   const closeHandlerRef = useRef<(() => void) | null>(null)
+  const pendingOpenAfterAddRef = useRef(false)
 
   const registerCartHandlers = useCallback(
     (open: () => void, close: () => void) => {
@@ -49,13 +53,35 @@ export const CartUIProvider = ({ children }: { children: React.ReactNode }) => {
     closeHandlerRef.current?.()
   }, [])
 
+  const scheduleOpenCartAfterAdd = useCallback(() => {
+    pendingOpenAfterAddRef.current = true
+  }, [])
+
+  const isOpenCartAfterAddPending = useCallback(() => {
+    return pendingOpenAfterAddRef.current
+  }, [])
+
+  const clearOpenCartAfterAddPending = useCallback(() => {
+    pendingOpenAfterAddRef.current = false
+  }, [])
+
   const value = useMemo(
     () => ({
       openCart,
       closeCart,
+      scheduleOpenCartAfterAdd,
+      isOpenCartAfterAddPending,
+      clearOpenCartAfterAddPending,
       registerCartHandlers,
     }),
-    [openCart, closeCart, registerCartHandlers]
+    [
+      openCart,
+      closeCart,
+      scheduleOpenCartAfterAdd,
+      isOpenCartAfterAddPending,
+      clearOpenCartAfterAddPending,
+      registerCartHandlers,
+    ]
   )
 
   return (

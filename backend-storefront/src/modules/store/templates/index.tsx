@@ -25,14 +25,17 @@ const StoreTemplate = ({
       data-testid="category-container"
     >
       <RefinementList>
+        <h1
+          className="mb-5 border-b border-gray-300 pb-4 text-lg font-bold leading-tight text-brand-accent md:text-xl"
+          data-testid="store-page-title"
+        >
+          Nuestro Catálogo
+        </h1>
         <CatalogSidebar />
       </RefinementList>
       <div className="flex w-full min-w-0 flex-1 flex-col gap-4">
-        <header>
-          <h1
-            className="text-3xl font-bold text-brand-accent"
-            data-testid="store-page-title"
-          >
+        <header className="mb-4 small:hidden">
+          <h1 className="border-b border-gray-300 pb-3 text-xl font-bold text-brand-accent">
             Nuestro Catálogo
           </h1>
         </header>

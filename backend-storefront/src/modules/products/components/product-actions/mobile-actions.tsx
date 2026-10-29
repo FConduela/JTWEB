@@ -1,16 +1,13 @@
-import { Dialog, Transition } from "@headlessui/react"
 import { Button, clx } from "@medusajs/ui"
 import React, { Fragment, useMemo } from "react"
-
-import useToggleState from "@lib/hooks/use-toggle-state"
-import ChevronDown from "@modules/common/icons/chevron-down"
-import X from "@modules/common/icons/x"
+import { Transition } from "@headlessui/react"
 
 import { getProductPrice } from "@lib/util/get-product-price"
+import { getStorefrontProductOptions } from "@lib/util/product-options"
+import { isSimpleProduct } from "@lib/util/product"
 import OptionSelect from "./option-select"
 import QuantitySelect from "./quantity-select"
 import { HttpTypes } from "@medusajs/types"
-import { isSimpleProduct } from "@lib/util/product"
 
 type MobileActionsProps = {
   product: HttpTypes.StoreProduct
@@ -41,8 +38,6 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   onQuantityChange,
   maxQuantity,
 }) => {
-  const { state, open, close } = useToggleState()
-
   const price = getProductPrice({
     product: product,
     variantId: variant?.id,
@@ -58,160 +53,94 @@ const MobileActions: React.FC<MobileActionsProps> = ({
   }, [price])
 
   const isSimple = isSimpleProduct(product)
+  const storefrontOptions = getStorefrontProductOptions(product.options)
+  const showOptionSelectors =
+    !isSimple && (product.variants?.length ?? 0) > 1 && storefrontOptions.length
 
   return (
-    <>
-      <div
-        className={clx("fixed inset-x-0 bottom-0 z-40 lg:hidden", {
-          "pointer-events-none": !show,
-        })}
+    <div
+      className={clx("fixed inset-x-0 bottom-0 z-40 lg:hidden", {
+        "pointer-events-none": !show,
+      })}
+    >
+      <Transition
+        as={Fragment}
+        show={show}
+        enter="ease-in-out duration-300"
+        enterFrom="opacity-0 translate-y-2"
+        enterTo="opacity-100 translate-y-0"
+        leave="ease-in duration-300"
+        leaveFrom="opacity-100 translate-y-0"
+        leaveTo="opacity-0 translate-y-2"
       >
-        <Transition
-          as={Fragment}
-          show={show}
-          enter="ease-in-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-300"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+        <div
+          className="max-h-[min(70vh,520px)] w-full overflow-y-auto border-t border-gray-300 bg-brand-card p-4 shadow-[0_-4px_20px_rgba(74,74,74,0.12)]"
+          data-testid="mobile-actions"
         >
-          <div
-            className="bg-white flex flex-col gap-y-3 justify-center items-center text-large-regular p-4 h-full w-full border-t border-gray-200"
-            data-testid="mobile-actions"
-          >
-            <div className="flex items-center gap-x-2">
-              <span data-testid="mobile-title">{product.title}</span>
-              <span>—</span>
-              {selectedPrice ? (
-                <div className="flex items-end gap-x-2 text-ui-fg-base">
-                  {selectedPrice.price_type === "sale" && (
-                    <p>
-                      <span className="line-through text-small-regular">
-                        {selectedPrice.original_price}
-                      </span>
-                    </p>
-                  )}
-                  <span
-                    className={clx({
-                      "text-ui-fg-interactive":
-                        selectedPrice.price_type === "sale",
-                    })}
-                  >
-                    {selectedPrice.calculated_price}
+          <div className="mb-3 flex min-w-0 items-center gap-x-2 text-sm text-brand-text">
+            <span className="truncate font-medium" data-testid="mobile-title">
+              {product.title}
+            </span>
+            <span className="shrink-0 text-brand-text/50">—</span>
+            {selectedPrice ? (
+              <div className="flex shrink-0 items-end gap-x-1.5 text-brand-text">
+                {selectedPrice.price_type === "sale" && (
+                  <span className="text-xs line-through text-brand-text/50">
+                    {selectedPrice.original_price}
                   </span>
-                </div>
-              ) : (
-                <div></div>
-              )}
-            </div>
-            <div className="flex w-full flex-col gap-3">
-              {!isSimple && (
-                <Button
-                  onClick={open}
-                  variant="secondary"
-                  className="w-full"
-                  data-testid="mobile-actions-button"
+                )}
+                <span
+                  className={clx("text-sm font-semibold", {
+                    "text-brand-accent": selectedPrice.price_type === "sale",
+                  })}
                 >
-                  <div className="flex w-full items-center justify-between">
-                    <span>
-                      {variant
-                        ? Object.values(options).join(" / ")
-                        : "Seleccionar opciones"}
-                    </span>
-                    <ChevronDown />
-                  </div>
-                </Button>
-              )}
-              <div className="flex w-full items-center gap-3">
-                <QuantitySelect
-                  value={quantity}
-                  onChange={onQuantityChange}
-                  max={maxQuantity}
-                  disabled={optionsDisabled || !inStock || !variant}
-                />
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={!inStock || !variant}
-                  className="h-11 min-w-0 flex-1 !border-none !bg-brand-accent !text-white !shadow-none transition-colors hover:!bg-brand-accent/90 focus-visible:!ring-brand-accent"
-                  isLoading={isAdding}
-                  data-testid="mobile-cart-button"
-                >
-                  {!variant
-                    ? "Seleccionar variante"
-                    : !inStock
-                    ? "Sin stock"
-                    : "Agregar al carrito"}
-                </Button>
+                  {selectedPrice.calculated_price}
+                </span>
               </div>
-            </div>
+            ) : null}
           </div>
-        </Transition>
-      </div>
-      <Transition appear show={state} as={Fragment}>
-        <Dialog as="div" className="relative z-[75]" onClose={close}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-gray-700 bg-opacity-75 backdrop-blur-sm" />
-          </Transition.Child>
 
-          <div className="fixed bottom-0 inset-x-0">
-            <div className="flex min-h-full h-full items-center justify-center text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0"
-                enterTo="opacity-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
-              >
-                <Dialog.Panel
-                  className="w-full h-full transform overflow-hidden text-left flex flex-col gap-y-3"
-                  data-testid="mobile-actions-modal"
-                >
-                  <div className="w-full flex justify-end pr-6">
-                    <button
-                      onClick={close}
-                      className="bg-white w-12 h-12 rounded-full text-ui-fg-base flex justify-center items-center"
-                      data-testid="close-modal-button"
-                    >
-                      <X />
-                    </button>
-                  </div>
-                  <div className="bg-white px-6 py-12">
-                    {(product.variants?.length ?? 0) > 1 && (
-                      <div className="flex flex-col gap-y-6">
-                        {(product.options || []).map((option) => {
-                          return (
-                            <div key={option.id}>
-                              <OptionSelect
-                                option={option}
-                                current={options[option.id]}
-                                updateOption={updateOptions}
-                                title={option.title ?? ""}
-                                disabled={optionsDisabled}
-                              />
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
+          {showOptionSelectors && (
+            <div className="mb-3 flex flex-col gap-y-3 border-b border-gray-200/90 pb-3">
+              {storefrontOptions.map((option) => (
+                <OptionSelect
+                  key={option.id}
+                  option={option}
+                  variants={product.variants}
+                  current={options[option.id]}
+                  updateOption={updateOptions}
+                  title={option.title ?? ""}
+                  disabled={optionsDisabled}
+                  data-testid="product-options"
+                />
+              ))}
             </div>
+          )}
+
+          <div className="flex w-full items-center gap-3">
+            <QuantitySelect
+              value={quantity}
+              onChange={onQuantityChange}
+              max={maxQuantity}
+              disabled={optionsDisabled || !inStock || !variant}
+            />
+            <Button
+              onClick={handleAddToCart}
+              disabled={!inStock || !variant || optionsDisabled}
+              className="h-11 min-w-0 flex-1 !border-none !bg-brand-accent !text-white !shadow-none transition-colors hover:!bg-brand-accent/90 focus-visible:!ring-brand-accent"
+              isLoading={isAdding}
+              data-testid="mobile-cart-button"
+            >
+              {!variant
+                ? "Seleccionar variante"
+                : !inStock
+                  ? "Sin stock"
+                  : "Agregar al carrito"}
+            </Button>
           </div>
-        </Dialog>
+        </div>
       </Transition>
-    </>
+    </div>
   )
 }
 

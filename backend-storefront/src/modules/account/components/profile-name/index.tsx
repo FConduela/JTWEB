@@ -7,6 +7,10 @@ import Input from "@modules/common/components/input"
 import AccountInfo from "../account-info"
 import { HttpTypes } from "@medusajs/types"
 import { updateCustomer } from "@lib/data/customer"
+import {
+  formatCustomerFullName,
+  isBlankCustomerField,
+} from "@lib/util/customer-display"
 
 type MyInformationProps = {
   customer: HttpTypes.StoreCustomer
@@ -48,8 +52,11 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
   return (
     <form action={formAction} className="w-full overflow-visible">
       <AccountInfo
-        label="Name"
-        currentInfo={`${customer.first_name} ${customer.last_name}`}
+        label="Nombre"
+        currentInfo={formatCustomerFullName(
+          customer.first_name,
+          customer.last_name
+        )}
         isSuccess={successState}
         isError={!!state?.error}
         clearState={clearState}
@@ -57,17 +64,25 @@ const ProfileName: React.FC<MyInformationProps> = ({ customer }) => {
       >
         <div className="grid grid-cols-2 gap-x-4">
           <Input
-            label="First name"
+            label="Nombre"
             name="first_name"
             required
-            defaultValue={customer.first_name ?? ""}
+            defaultValue={
+              isBlankCustomerField(customer.first_name)
+                ? ""
+                : String(customer.first_name)
+            }
             data-testid="first-name-input"
           />
           <Input
-            label="Last name"
+            label="Apellido"
             name="last_name"
             required
-            defaultValue={customer.last_name ?? ""}
+            defaultValue={
+              isBlankCustomerField(customer.last_name)
+                ? ""
+                : String(customer.last_name)
+            }
             data-testid="last-name-input"
           />
         </div>

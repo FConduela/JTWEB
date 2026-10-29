@@ -10,6 +10,9 @@ import PayPal from "@modules/common/icons/paypal"
  */
 export const DEFAULT_COUNTRY_CODE = "cl"
 
+/** Vincular pedido manual (Medusa requestTransfer) en /account/orders. */
+export const SHOW_ORDER_TRANSFER_FORM = false
+
 /* Map of payment provider_id to their title and icon. Add in any payment providers you want to use. */
 export const paymentInfoMap: Record<
   string,
@@ -24,7 +27,7 @@ export const paymentInfoMap: Record<
     icon: <PayPal />,
   },
   pp_system_default: {
-    title: "Manual Payment",
+    title: "Pago manual",
     icon: <CreditCard />,
   },
   pp_transbank_transbank: {

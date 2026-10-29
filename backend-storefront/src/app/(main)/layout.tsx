@@ -1,11 +1,15 @@
 import { Metadata } from "next"
 
-import { listCartOptions, retrieveCart } from "@lib/data/cart"
+import {
+  listCartOptions,
+  retrieveCart,
+  retrieveFreshCart,
+} from "@lib/data/cart"
 import { retrieveCustomer } from "@lib/data/customer"
+import { getNavAccountLabel } from "@lib/util/customer-display"
 import { getBaseURL } from "@lib/util/env"
 import { StoreCartShippingOption } from "@medusajs/types"
 import CookieBanner from "@modules/layout/components/cookie-banner"
-import CartMismatchBanner from "@modules/layout/components/cart-mismatch-banner"
 import CartUIProviderWrapper from "@modules/layout/components/cart-ui-provider"
 import Footer from "@modules/layout/templates/footer"
 import Nav from "@modules/layout/templates/nav"
@@ -17,7 +21,10 @@ export const metadata: Metadata = {
 
 export default async function PageLayout(props: { children: React.ReactNode }) {
   const customer = await retrieveCustomer()
-  const cart = await retrieveCart()
+
+  const cart = customer
+    ? await retrieveFreshCart()
+    : await retrieveCart()
   let shippingOptions: StoreCartShippingOption[] = []
 
   if (cart) {
@@ -28,11 +35,7 @@ export default async function PageLayout(props: { children: React.ReactNode }) {
 
   return (
     <CartUIProviderWrapper>
-      <Nav />
-      {customer && cart && (
-        <CartMismatchBanner customer={customer} cart={cart} />
-      )}
-
+      <Nav accountLabel={getNavAccountLabel(customer)} isLoggedIn={!!customer} />
       {cart && (
         <FreeShippingPriceNudge
           variant="popup"

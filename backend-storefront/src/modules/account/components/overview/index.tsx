@@ -1,12 +1,18 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
-import ClaimGuestOrdersOnMount from "@modules/account/components/claim-guest-orders"
 import { convertToLocale } from "@lib/util/money"
+import { customerFirstNameOrFallback } from "@lib/util/customer-display"
 import { HttpTypes } from "@medusajs/types"
 
 type OverviewProps = {
   customer: HttpTypes.StoreCustomer | null
   orders: HttpTypes.StoreOrder[] | null
 }
+
+const dateFormatter = new Intl.DateTimeFormat("es-CL", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+})
 
 const Overview = ({ customer, orders }: OverviewProps) => {
   const profileCompletion = getProfileCompletion(customer)
@@ -15,24 +21,23 @@ const Overview = ({ customer, orders }: OverviewProps) => {
 
   return (
     <section
-      className="flex flex-col gap-4 md:gap-6"
+      className="flex flex-col gap-6"
       data-testid="overview-page-wrapper"
       aria-labelledby="account-overview-heading"
     >
-      <ClaimGuestOrdersOnMount />
-      <header className="flex flex-col gap-2 border-b border-ui-border-base pb-4">
+      <header className="border-b border-gray-200 pb-4">
         <h1
           id="account-overview-heading"
-          className="text-xl-semi"
+          className="text-xl font-bold text-brand-accent md:text-2xl"
           data-testid="welcome-message"
           data-value={customer?.first_name}
         >
-          Hola, {customer?.first_name}
+          Hola, {customerFirstNameOrFallback(customer?.first_name)}
         </h1>
-        <p className="text-small-regular text-ui-fg-subtle">
+        <p className="mt-2 text-sm text-brand-text/80">
           Sesión iniciada como{" "}
           <span
-            className="font-medium text-ui-fg-base"
+            className="font-medium text-brand-text"
             data-testid="customer-email"
             data-value={customer?.email}
           >
@@ -42,92 +47,62 @@ const Overview = ({ customer, orders }: OverviewProps) => {
       </header>
 
       <div className="flex flex-col gap-4 md:grid md:grid-cols-2 md:gap-4">
-        <article className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 md:p-6">
-          <h2 className="text-base-semi mb-3">Perfil</h2>
+        <article className="rounded-2xl border border-gray-200 bg-brand-card p-4 md:p-6">
+          <h2 className="mb-3 text-base font-semibold text-brand-text">
+            Perfil
+          </h2>
           <p className="flex items-end gap-x-2">
             <span
-              className="text-3xl-semi leading-none"
+              className="text-3xl font-bold leading-none text-brand-accent"
               data-testid="customer-profile-completion"
               data-value={profileCompletion}
             >
               {profileCompletion}%
             </span>
-            <span className="text-small-regular text-ui-fg-subtle uppercase">
+            <span className="text-xs font-medium uppercase text-brand-text/60">
               Completado
             </span>
           </p>
           <LocalizedClientLink
             href="/account/profile"
-            className="mt-4 inline-block text-small-regular underline text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+            className="mt-4 inline-block text-sm font-medium text-brand-accent hover:underline"
           >
             Editar perfil
           </LocalizedClientLink>
         </article>
 
-        <article className="rounded-lg border border-ui-border-base bg-ui-bg-subtle p-4 md:p-6">
-          <h2 className="text-base-semi mb-3">Direcciones</h2>
+        <article className="rounded-2xl border border-gray-200 bg-brand-card p-4 md:p-6">
+          <h2 className="mb-3 text-base font-semibold text-brand-text">
+            Direcciones
+          </h2>
           <p className="flex items-end gap-x-2">
             <span
-              className="text-3xl-semi leading-none"
+              className="text-3xl font-bold leading-none text-brand-accent"
               data-testid="addresses-count"
               data-value={addressesCount}
             >
               {addressesCount}
             </span>
-            <span className="text-small-regular text-ui-fg-subtle uppercase">
+            <span className="text-xs font-medium uppercase text-brand-text/60">
               Guardadas
             </span>
           </p>
           <LocalizedClientLink
             href="/account/addresses"
-            className="mt-4 inline-block text-small-regular underline text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+            className="mt-4 inline-block text-sm font-medium text-brand-accent hover:underline"
           >
             Gestionar direcciones
           </LocalizedClientLink>
         </article>
 
-        <nav
-          className="flex flex-col gap-2 rounded-lg border border-ui-border-base p-4 md:p-6"
-          aria-label="Accesos rápidos de cuenta"
-        >
-          <h2 className="text-base-semi mb-1">Accesos rápidos</h2>
-          <ul className="flex flex-col gap-2 text-small-regular">
-            <li>
-              <LocalizedClientLink
-                href="/account/profile"
-                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
-                data-testid="profile-link"
-              >
-                Mi perfil
-              </LocalizedClientLink>
-            </li>
-            <li>
-              <LocalizedClientLink
-                href="/account/addresses"
-                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
-                data-testid="addresses-link"
-              >
-                Mis direcciones
-              </LocalizedClientLink>
-            </li>
-            <li>
-              <LocalizedClientLink
-                href="/account/orders"
-                className="text-ui-fg-interactive hover:text-ui-fg-interactive-hover underline"
-                data-testid="orders-link"
-              >
-                Mis pedidos
-              </LocalizedClientLink>
-            </li>
-          </ul>
-        </nav>
-
-        <article className="rounded-lg border border-ui-border-base p-4 md:p-6 md:col-span-2">
+        <article className="rounded-2xl border border-gray-200 bg-brand-card p-4 md:col-span-2 md:p-6">
           <header className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="text-base-semi">Pedidos recientes</h2>
+            <h2 className="text-base font-semibold text-brand-text">
+              Pedidos recientes
+            </h2>
             <LocalizedClientLink
               href="/account/orders"
-              className="text-small-regular underline text-ui-fg-interactive hover:text-ui-fg-interactive-hover"
+              className="text-sm font-medium text-brand-accent hover:underline"
             >
               Ver todos
             </LocalizedClientLink>
@@ -136,26 +111,42 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           <ul className="flex flex-col gap-3" data-testid="orders-wrapper">
             {recentOrders.length > 0 ? (
               recentOrders.map((order) => (
-                <li key={order.id} data-testid="order-wrapper" data-value={order.id}>
+                <li
+                  key={order.id}
+                  data-testid="order-wrapper"
+                  data-value={order.id}
+                >
                   <LocalizedClientLink
                     href={`/account/orders/details/${order.id}`}
-                    className="block rounded-md border border-ui-border-base bg-ui-bg-subtle p-4 transition-colors hover:bg-ui-bg-subtle-hover"
+                    className="block rounded-xl border border-gray-200 bg-brand-bg/30 p-4 transition-colors hover:border-brand-accent/30 hover:bg-brand-section/30"
                   >
-                    <div className="grid grid-cols-1 gap-2 text-small-regular sm:grid-cols-3 sm:gap-4">
+                    <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3 sm:gap-4">
                       <div>
-                        <span className="block font-semibold">Fecha</span>
-                        <time dateTime={order.created_at} data-testid="order-created-date">
-                          {new Date(order.created_at).toLocaleDateString()}
+                        <span className="block text-xs font-semibold uppercase text-brand-text/60">
+                          Fecha
+                        </span>
+                        <time
+                          dateTime={new Date(order.created_at).toISOString()}
+                          data-testid="order-created-date"
+                        >
+                          {dateFormatter.format(new Date(order.created_at))}
                         </time>
                       </div>
                       <div>
-                        <span className="block font-semibold">Número</span>
-                        <span data-testid="order-id" data-value={order.display_id}>
+                        <span className="block text-xs font-semibold uppercase text-brand-text/60">
+                          Número
+                        </span>
+                        <span
+                          data-testid="order-id"
+                          data-value={order.display_id}
+                        >
                           #{order.display_id}
                         </span>
                       </div>
                       <div>
-                        <span className="block font-semibold">Total</span>
+                        <span className="block text-xs font-semibold uppercase text-brand-text/60">
+                          Total
+                        </span>
                         <span data-testid="order-amount">
                           {convertToLocale({
                             amount: order.total,
@@ -169,7 +160,10 @@ const Overview = ({ customer, orders }: OverviewProps) => {
               ))
             ) : (
               <li>
-                <p className="text-small-regular text-ui-fg-subtle" data-testid="no-orders-message">
+                <p
+                  className="text-sm text-brand-text/70"
+                  data-testid="no-orders-message"
+                >
                   Aún no tienes pedidos recientes.
                 </p>
               </li>
@@ -177,16 +171,6 @@ const Overview = ({ customer, orders }: OverviewProps) => {
           </ul>
         </article>
       </div>
-
-      <footer className="border-t border-ui-border-base pt-4">
-        <a
-          href="/api/auth/logout"
-          className="inline-flex items-center text-small-regular text-ui-fg-subtle underline hover:text-ui-fg-base"
-          data-testid="logout-button"
-        >
-          Cerrar sesión
-        </a>
-      </footer>
     </section>
   )
 }
